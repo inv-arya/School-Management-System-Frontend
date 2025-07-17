@@ -8,6 +8,9 @@ import {
   ListItemText,
   Toolbar,
   Divider,
+  Box,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
@@ -15,6 +18,8 @@ const drawerWidth = 240;
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const navItems = [
     { text: "Register", path: "/register" },
@@ -22,18 +27,8 @@ const Sidebar = () => {
     { text: "Students", path: "/students" },
   ];
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: drawerWidth,
-        flexShrink: 0,
-        [`& .MuiDrawer-paper`]: {
-          width: drawerWidth,
-          boxSizing: "border-box",
-        },
-      }}
-    >
+   const drawerContent = (
+    <Box onClick={isMobile ? onDrawerToggle : undefined} sx={{ textAlign: 'center' }}>
       <Toolbar />
       <Divider />
       <List>
@@ -45,7 +40,42 @@ const Sidebar = () => {
           </ListItem>
         ))}
       </List>
-    </Drawer>
+    </Box>
+  );
+
+
+  return (
+     <>
+      {/* Temporary Drawer for Mobile */}
+      {isMobile && (
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={onDrawerToggle}
+          ModalProps={{
+            keepMounted: true, // Better performance on mobile
+          }}
+          sx={{
+            display: { xs: "block", sm: "none" },
+            "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      )}
+
+      {/* Permanent Drawer for Desktop */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: "none", sm: "block" },
+          "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+        }}
+        open
+      >
+        {drawerContent}
+      </Drawer>
+    </>
   );
 };
 

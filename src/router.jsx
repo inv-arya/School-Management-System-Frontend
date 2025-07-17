@@ -33,7 +33,7 @@ routesConfig = [
         element: <Dashboard />,
       },
       {
-        path: "register",
+        path: "students/register",
         element: <Register />,
       },
       {
