@@ -60,7 +60,7 @@ axiosInstance.interceptors.response.use(
     ) {
       // Refresh token expired: logout
       localStorage.clear();
-      window.location.replace('/login');
+      window.location.replace('/');
     }
 
     return Promise.reject(error);
