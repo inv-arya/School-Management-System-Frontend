@@ -20,7 +20,7 @@ const TeacherList = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const pageSize = 10;
+  const pageSize = 5;
 
   const fetchTeachers = async (page = 1) => {
     try {
