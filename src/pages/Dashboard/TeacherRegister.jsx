@@ -12,10 +12,11 @@ const statusOptions = [
   { value: 'inactive', label: 'Inactive' },
 ];
 
-const Register = () => {
+const RegisterTeacher = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -31,34 +32,33 @@ const Register = () => {
           username: data.username,
           email: data.email,
           password: data.password,
-          role: 'student',
+          role: 'teacher',
         },
         first_name: data.first_name,
         last_name: data.last_name,
         email: data.email,
         phone_number: data.phone_number,
-        roll_number: data.roll_number,
-        grade: data.grade,
-        date_of_birth: data.date_of_birth,
-        admission_date: data.admission_date,
+        subject_specialization: data.subject_specialization,
+        employee_id: data.employee_id,
+        date_of_joining: data.date_of_joining,
         status: data.status,
-        assigned_teacher: data.assigned_teacher || null,
       };
 
-      await axiosInstance.post('/students/', payload);
-      navigate('/students');
+      await axiosInstance.post('/teachers/', payload);
+      navigate('/teachers');
     } catch (error) {
-      if (error.response?.data?.email) {
-        setError('email', { message: error.response.data.email[0] });
+      const errData = error.response?.data;
+      if (errData?.email) {
+        setError('email', { message: errData.email[0] });
       }
-      if (error.response?.data?.roll_number) {
-        setError('roll_number', { message: error.response.data.roll_number[0] });
+      if (errData?.employee_id) {
+        setError('employee_id', { message: errData.employee_id[0] });
       }
-      if (error.response?.data?.user?.username) {
-        setError('username', { message: error.response.data.user.username[0] });
+      if (errData?.user?.username) {
+        setError('username', { message: errData.user.username[0] });
       }
-      if (error.response?.data?.user?.password) {
-        setError('password', { message: error.response.data.user.password[0] });
+      if (errData?.user?.password) {
+        setError('password', { message: errData.user.password[0] });
       }
     }
   };
@@ -66,11 +66,12 @@ const Register = () => {
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
-        Register Student
+        Register Teacher
       </Typography>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Grid container spacing={2}>
+
           {/* User Fields */}
           <Grid item xs={12} sm={6}>
             <TextField
@@ -81,6 +82,7 @@ const Register = () => {
               helperText={errors.username?.message}
             />
           </Grid>
+
           <Grid item xs={12} sm={6}>
             <TextField
               label="Email"
@@ -91,12 +93,15 @@ const Register = () => {
               helperText={errors.email?.message}
             />
           </Grid>
+
           <Grid item xs={12} sm={6}>
             <TextField
               label="Password"
               type={showPassword ? 'text' : 'password'}
               fullWidth
-              {...register('password', { required: 'Password is required' ,minLength: {
+              {...register('password', {
+                required: 'Password is required',
+                minLength: {
                   value: 8,
                   message: 'Password must be at least 8 characters',
                 },
@@ -104,7 +109,8 @@ const Register = () => {
                   hasLetterAndNumber: (value) =>
                     /^(?=.*[A-Za-z])(?=.*\d)/.test(value) ||
                     'Password must include at least one letter and one number',
-                },})}
+                },
+              })}
               error={!!errors.password}
               helperText={errors.password?.message}
               InputProps={{
@@ -118,10 +124,11 @@ const Register = () => {
               }}
             />
           </Grid>
+
           <Grid item xs={12} sm={6}>
             <TextField
               label="Confirm Password"
-              type={showConfirmPassword ? 'text' : 'password'} 
+              type={showConfirmPassword ? 'text' : 'password'}
               fullWidth
               {...register('confirm_password', {
                 required: 'Please confirm password',
@@ -142,7 +149,7 @@ const Register = () => {
             />
           </Grid>
 
-          {/* Student Info */}
+          {/* Teacher Info */}
           <Grid item xs={12} sm={6}>
             <TextField
               label="First Name"
@@ -152,6 +159,7 @@ const Register = () => {
               helperText={errors.first_name?.message}
             />
           </Grid>
+
           <Grid item xs={12} sm={6}>
             <TextField
               label="Last Name"
@@ -161,62 +169,58 @@ const Register = () => {
               helperText={errors.last_name?.message}
             />
           </Grid>
+
           <Grid item xs={12} sm={6}>
             <TextField
               label="Phone Number"
               fullWidth
-              {...register('phone_number', { required: 'Phone number is required' ,pattern: {
-                value: /^[0-9]{10}$/,
-                message: 'Phone number must be exactly 10 digits',
-              },})}
+              {...register('phone_number', {
+                required: 'Phone number is required',
+                pattern: {
+                  value: /^[0-9]{10}$/,
+                  message: 'Phone number must be exactly 10 digits',
+                },
+              })}
               error={!!errors.phone_number}
               helperText={errors.phone_number?.message}
             />
           </Grid>
+
           <Grid item xs={12} sm={6}>
             <TextField
-              label="Roll Number"
+              label="Subject Specialization"
               fullWidth
-              {...register('roll_number', { required: 'Roll number is required',pattern: {
-                value: /^REG-\d{4}-\d{3}$/,
-                message: 'Format must be REG-YYYY-XXX (e.g., REG-2025-001)',
+              {...register('subject_specialization', { required: 'Subject specialization is required' })}
+              error={!!errors.subject_specialization}
+              helperText={errors.subject_specialization?.message}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Employee ID"
+              fullWidth
+              {...register('employee_id', { required: 'Employee ID is required',pattern: {
+                value: /^EMP-\d{4}-\d{3}$/,
+                message: 'Format must be EMP-YYYY-XXX (e.g., EMP-2025-001)',
               } })}
-              error={!!errors.roll_number}
-              helperText={errors.roll_number?.message}
+              error={!!errors.employee_id}
+              helperText={errors.employee_id?.message}
             />
           </Grid>
+
           <Grid item xs={12} sm={6}>
             <TextField
-              label="Grade"
-              
-              fullWidth
-              {...register('grade', { required: 'Grade is required' })}
-              error={!!errors.grade}
-              helperText={errors.grade?.message}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Date of Birth"
+              label="Date of Joining"
               type="date"
               fullWidth
               InputLabelProps={{ shrink: true }}
-              {...register('date_of_birth', { required: 'Date of birth is required' })}
-              error={!!errors.date_of_birth}
-              helperText={errors.date_of_birth?.message}
+              {...register('date_of_joining', { required: 'Date of joining is required' })}
+              error={!!errors.date_of_joining}
+              helperText={errors.date_of_joining?.message}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Admission Date"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              {...register('admission_date', { required: 'Admission date is required' })}
-              error={!!errors.admission_date}
-              helperText={errors.admission_date?.message}
-            />
-          </Grid>
+
           <Grid item xs={12} sm={6}>
             <TextField
               select
@@ -228,25 +232,15 @@ const Register = () => {
               helperText={errors.status?.message}
             >
               {statusOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
               ))}
             </TextField>
           </Grid>
 
           <Grid item xs={12}>
-            <TextField
-              label="Assigned Teacher ID"
-              fullWidth
-              {...register('assigned_teacher',{required: 'Assigned Teacher ID is required'})}
-              error={!!errors.assigned_teacher}
-              helperText={errors.assigned_teacher?.message}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
             <Box textAlign="right">
               <Button type="submit" variant="contained" color="primary">
-                Register Student
+                Register Teacher
               </Button>
             </Box>
           </Grid>
@@ -256,4 +250,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default RegisterTeacher;

@@ -9,6 +9,7 @@ import PrivateRoute from './utils/PrivateRoute';
 import Teachers from "./pages/Dashboard/Teachers";
 import Students from "./pages/Dashboard/Students";
 import Register from "./pages/Dashboard/Register";
+import TeacherRegister from "./pages/Dashboard/TeacherRegister";
 
 const 
 routesConfig = [ 
@@ -35,6 +36,10 @@ routesConfig = [
       {
         path: "students/register",
         element: <Register />,
+      },
+      {
+        path: "teachers/register",
+        element: <TeacherRegister />,
       },
       {
         path: "students",

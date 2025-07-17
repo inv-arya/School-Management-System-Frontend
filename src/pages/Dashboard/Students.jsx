@@ -11,7 +11,7 @@ import {
   Fab
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import {axiosInstance} from '../../api/axios'; // your axios setup with baseURL
+import {axiosInstance} from '../../api/axios'; 
 import AddIcon from '@mui/icons-material/Add';
 
 const Students = () => {
@@ -21,7 +21,7 @@ const Students = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const pageSize = 10;
+  const pageSize = 5;
 
   const fetchStudents = async (page = 1) => {
     try {
@@ -48,14 +48,7 @@ const Students = () => {
         All Students
       </Typography>
 
-      {/* <Button
-        variant="contained"
-        color="primary"
-        sx={{ mb: 3 }}
-        onClick={() => navigate('/students/register')}
-      >
-        Register Student
-      </Button> */}
+     
 
       {loading ? (
         <CircularProgress />
