@@ -22,7 +22,7 @@ const Sidebar = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const navItems = [
-    { text: "Register", path: "/register" },
+    
     { text: "Teachers", path: "/teachers" },
     { text: "Students", path: "/students" },
   ];
