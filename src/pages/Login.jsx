@@ -1,27 +1,36 @@
-import React from "react";
+import React, { useState } from 'react';
 import { useForm } from "react-hook-form";
-import { Container, Typography, TextField, Button, Box } from "@mui/material";
+import { Container, Typography, TextField, Button, Box , InputAdornment,IconButton} from "@mui/material";
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/axios";
+import { useAuth } from "../auth/AuthContext";
 
 export default function Login() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm();
 
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const { setIsAuthenticated, setRole } = useAuth();
 
     const onSubmit = async (data) => {
         try {
-        await login({
-            username: data.username,
-            password: data.password,
+        const { role } = await login({
+        username: data.username,
+        password: data.password,
         });
+
+        setIsAuthenticated(true);
+        setRole(role);
+
         navigate("/dashboard");
         } catch (error) {
-        // Show error below password field
+        
         setError("password", {
             type: "manual",
             message: "Invalid username or password",
@@ -49,7 +58,7 @@ export default function Login() {
 
         <TextField
           label="Password"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           fullWidth
           margin="normal"
           {...register("password", {
@@ -58,6 +67,15 @@ export default function Login() {
           })}
           error={!!errors.password}
           helperText={errors.password?.message}
+          InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
         />
 
         <Button

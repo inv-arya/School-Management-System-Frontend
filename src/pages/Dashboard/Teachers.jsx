@@ -12,6 +12,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../../api/axios';
+import withRoleAccess from '../../hoc/withRoleAccess';
 
 const TeacherList = () => {
   const [teachers, setTeachers] = useState([]);
@@ -41,13 +42,31 @@ const TeacherList = () => {
 
   const totalPages = Math.ceil(count / pageSize);
 
+  const RegisterTeacherButton = ({ onClick }) => (
+    <Fab
+      color="primary"
+      aria-label="add"
+      onClick={onClick}
+      sx={{
+        position: 'fixed',
+        bottom: 32,
+        right: 32,
+        zIndex: 1000,
+      }}
+    >
+      <AddIcon />
+    </Fab>
+  );
+  const ProtectedRegisterTeacherButton = withRoleAccess(RegisterTeacherButton, ['admin']);
+
   return (
     <Container sx={{ mt: 4, position: 'relative' }}>
       <Typography variant="h4" gutterBottom>
         All Teachers
       </Typography>
 
-      {loading ? (
+      {loading ? 
+      (
         <CircularProgress />
       ) : (
         <>
@@ -83,21 +102,7 @@ const TeacherList = () => {
           )}
         </>
       )}
-
-      {/*Register Button*/}
-      <Fab
-        color="primary"
-        aria-label="add"
-        onClick={() => navigate('/teachers/register')}
-        sx={{
-          position: 'fixed',
-          bottom: 32,
-          right: 32,
-          zIndex: 1000,
-        }}
-      >
-        <AddIcon />
-      </Fab>
+      <ProtectedRegisterTeacherButton onClick={() => navigate('/teachers/register')} />
     </Container>
   );
 };
