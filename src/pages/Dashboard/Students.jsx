@@ -3,7 +3,7 @@ import {
   Container,
   Typography,
   Grid,
-  Button,
+  
   CircularProgress,
   Pagination,
   Paper,
@@ -13,6 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import {axiosInstance} from '../../api/axios'; 
 import AddIcon from '@mui/icons-material/Add';
+import withRoleAccess from '../../hoc/withRoleAccess'; 
 
 const Students = () => {
   const [students, setStudents] = useState([]);
@@ -41,6 +42,24 @@ const Students = () => {
   }, [page]);
 
   const totalPages = Math.ceil(count / pageSize);
+
+    const RegisterStudentButton = ({ onClick }) => (
+    <Fab
+      color="primary"
+      aria-label="add"
+      onClick={onClick}
+      sx={{
+        position: 'fixed',
+        bottom: 32,
+        right: 32,
+        zIndex: 1000,
+      }}
+    >
+      <AddIcon />
+    </Fab>
+  );
+
+  const ProtectedRegisterStudentButton = withRoleAccess(RegisterStudentButton, ['admin', 'teacher']);
 
   return (
     <Container sx={{ mt: 4 }}>
@@ -88,19 +107,7 @@ const Students = () => {
           )}
         </>
       )}
-      <Fab
-        color="primary"
-        aria-label="add"
-        onClick={() => navigate('/students/register')}
-        sx={{
-          position: 'fixed',
-          bottom: 32,
-          right: 32,
-          zIndex: 1000,
-        }}
-      >
-        <AddIcon />
-      </Fab>
+      <ProtectedRegisterStudentButton onClick={() => navigate('/students/register')} />
     </Container>
   );
 };
