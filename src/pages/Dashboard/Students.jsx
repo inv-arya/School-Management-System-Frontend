@@ -1,19 +1,24 @@
+
+
+
 import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
   Grid,
-  
   CircularProgress,
   Pagination,
   Paper,
   Box,
-  Fab
+  Fab,
+  Button,
+  Input,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import {axiosInstance} from '../../api/axios'; 
+import { axiosInstance } from '../../api/axios';
 import AddIcon from '@mui/icons-material/Add';
-import withRoleAccess from '../../hoc/withRoleAccess'; 
+import withRoleAccess from '../../hoc/withRoleAccess';
+import { useAuth } from '../../auth/AuthContext';
 
 const Students = () => {
   const [students, setStudents] = useState([]);
@@ -21,6 +26,10 @@ const Students = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
+  const [csvFile, setCsvFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState('');
+
+  const { user } = useAuth();
   const navigate = useNavigate();
   const pageSize = 5;
 
@@ -43,7 +52,38 @@ const Students = () => {
 
   const totalPages = Math.ceil(count / pageSize);
 
-    const RegisterStudentButton = ({ onClick }) => (
+  const handleFileChange = (event) => {
+    setCsvFile(event.target.files[0]);
+    setUploadStatus('');
+  };
+
+  const handleUpload = async () => {
+    if (!csvFile) {
+      setUploadStatus('Please select a file.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', csvFile);
+
+    try {
+      const response = await axiosInstance.post('/students/import-csv/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setUploadStatus(` ${response.data.message}`);
+      if (response.data.errors.length > 0) {
+        console.error('Some rows failed:', response.data.errors);
+      }
+      fetchStudents(); // reload data
+    } catch (error) {
+      setUploadStatus('Upload failed');
+      console.error('CSV upload error:', error);
+    }
+  };
+
+  // Floating Register Button — only for admin/teacher
+  const RegisterStudentButton = ({ onClick }) => (
     <Fab
       color="primary"
       aria-label="add"
@@ -61,13 +101,36 @@ const Students = () => {
 
   const ProtectedRegisterStudentButton = withRoleAccess(RegisterStudentButton, ['admin', 'teacher']);
 
+  // CSV Upload — admin only
+  const CSVImportSection = () => (
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h6">Import Students from CSV</Typography>
+      <input type="file" onChange={handleFileChange} />
+      {csvFile && (
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          Selected file: {csvFile.name}
+        </Typography>
+      )}
+      <Button variant="contained" sx={{ ml: 2 }} onClick={handleUpload}>
+        Upload CSV
+      </Button>
+      {uploadStatus && (
+        <Typography sx={{ mt: 1 }} color="primary">
+          {uploadStatus}
+        </Typography>
+      )}
+    </Box>
+  );
+
+  const ProtectedCSVImportSection = withRoleAccess(CSVImportSection, ['admin']);
+
   return (
     <Container sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
         All Students
       </Typography>
 
-     
+      <ProtectedCSVImportSection />
 
       {loading ? (
         <CircularProgress />
@@ -107,6 +170,7 @@ const Students = () => {
           )}
         </>
       )}
+
       <ProtectedRegisterStudentButton onClick={() => navigate('/students/register')} />
     </Container>
   );
