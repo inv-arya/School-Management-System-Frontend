@@ -5,6 +5,8 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/axios";
 import { useAuth } from "../auth/AuthContext";
+import { Link } from "react-router-dom";
+
 
 export default function Login() {
   const {
@@ -88,6 +90,9 @@ export default function Login() {
         >
           {isSubmitting ? "Logging in..." : "Login"}
         </Button>
+        <Typography variant="body2" align="right" sx={{ mt: 1 }}>
+           <Link to="/forgot-password">Forgot Password?</Link>
+        </Typography>
       </Box>
     </Container>
   );

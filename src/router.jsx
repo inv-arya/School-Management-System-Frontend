@@ -1,4 +1,4 @@
-// src/routes.jsx
+
 import React from "react";
 import { useRoutes } from "react-router-dom";
 import AuthLayout from "./auth/AuthLayout";
@@ -10,6 +10,10 @@ import Teachers from "./pages/Dashboard/Teachers";
 import Students from "./pages/Dashboard/Students";
 import Register from "./pages/Dashboard/Register";
 import TeacherRegister from "./pages/Dashboard/TeacherRegister";
+import ResetPassword from "./pages/ResetPassword";
+import ForgotPassword from "./pages/ForgetPassword";
+import Exam from "./pages/Dashboard/Exam";
+
 
 const 
 routesConfig = [ 
@@ -20,6 +24,13 @@ routesConfig = [
     path: "/",
     element: <Login />,
     },
+    {
+        path: "reset-password/:uid/:token",
+        element: <ResetPassword />,
+    },
+    { path: "/forgot-password",
+       element: <ForgotPassword />
+   },
     ],
   },
   {
@@ -48,6 +59,10 @@ routesConfig = [
       {
         path: "teachers",
         element: <Teachers />,
+      },
+      {
+        path:"exams",
+        element:<Exam />
       },
     ],
   },
