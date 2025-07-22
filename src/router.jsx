@@ -13,6 +13,8 @@ import TeacherRegister from "./pages/Dashboard/TeacherRegister";
 import ResetPassword from "./pages/ResetPassword";
 import ForgotPassword from "./pages/ForgetPassword";
 import Exam from "./pages/Dashboard/Exam";
+import ExamCreate from "./pages/Dashboard/ExamCreate";
+import ExamAttempt from "./pages/Dashboard/ExamAttempt";
 
 
 const 
@@ -63,6 +65,14 @@ routesConfig = [
       {
         path:"exams",
         element:<Exam />
+      },
+      {
+        path:"exams/create",
+        element:<ExamCreate/>
+      },
+       {
+        path:"/exams/attempt/:examId",
+        element:<ExamAttempt/>
       },
     ],
   },

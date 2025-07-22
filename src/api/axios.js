@@ -13,7 +13,7 @@ const axiosInstance = axios.create({
   },
 });
 
-// ✅ Request interceptor to attach token
+
 axiosInstance.interceptors.request.use(
   (config) => {
     const access = localStorage.getItem('access');
@@ -25,17 +25,16 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ✅ Response interceptor to refresh token on 401
+
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const errorCode = error.response?.data?.errorCode;
+   
 
-    // Token expired: E100102 = access expired, E100103 = refresh expired
+   
     if (
-      error.response?.status === 401 &&
-      errorCode === 'E100102' &&
+      error.response?.status === 401  &&
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
@@ -50,15 +49,14 @@ axiosInstance.interceptors.response.use(
             return axiosInstance(originalRequest);
           }
         } catch (err) {
-          window.location.replace('/login');
+          window.location.replace('/');
           return Promise.reject(err);
         }
       }
     } else if (
-      error.response?.status === 401 &&
-      errorCode === 'E100103'
+      error.response?.status === 401 
     ) {
-      // Refresh token expired: logout
+      
       localStorage.clear();
       window.location.replace('/');
     }
@@ -67,7 +65,7 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-// ✅ Token refresh function (uses Django JWT)
+
 async function refreshAccessToken() {
   const refresh = localStorage.getItem('refresh');
   if (!refresh) throw new Error('No refresh token available');

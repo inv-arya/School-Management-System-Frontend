@@ -19,6 +19,7 @@ import { axiosInstance } from '../../api/axios';
 import AddIcon from '@mui/icons-material/Add';
 import withRoleAccess from '../../hoc/withRoleAccess';
 import { useAuth } from '../../auth/AuthContext';
+import withRoleFab from '../../components/RoleFab';
 
 const Students = () => {
   const [students, setStudents] = useState([]);
@@ -82,24 +83,9 @@ const Students = () => {
     }
   };
 
-  // Floating Register Button — only for admin/teacher
-  const RegisterStudentButton = ({ onClick }) => (
-    <Fab
-      color="primary"
-      aria-label="add"
-      onClick={onClick}
-      sx={{
-        position: 'fixed',
-        bottom: 32,
-        right: 32,
-        zIndex: 1000,
-      }}
-    >
-      <AddIcon />
-    </Fab>
-  );
+  
+  const ProtectedRegisterStudentButton = withRoleFab(['admin', 'teacher']);
 
-  const ProtectedRegisterStudentButton = withRoleAccess(RegisterStudentButton, ['admin', 'teacher']);
 
   // CSV Upload — admin only
   const CSVImportSection = () => (

@@ -13,6 +13,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../../api/axios';
 import withRoleAccess from '../../hoc/withRoleAccess';
+import withRoleFab from '../../components/RoleFab';
 
 const TeacherList = () => {
   const [teachers, setTeachers] = useState([]);
@@ -42,23 +43,9 @@ const TeacherList = () => {
 
   const totalPages = Math.ceil(count / pageSize);
 
-  const RegisterTeacherButton = ({ onClick }) => (
-    <Fab
-      color="primary"
-      aria-label="add"
-      onClick={onClick}
-      sx={{
-        position: 'fixed',
-        bottom: 32,
-        right: 32,
-        zIndex: 1000,
-      }}
-    >
-      <AddIcon />
-    </Fab>
-  );
-  const ProtectedRegisterTeacherButton = withRoleAccess(RegisterTeacherButton, ['admin']);
+  const ProtectedRegisterTeacherButton = withRoleFab(['admin']);
 
+  
   return (
     <Container sx={{ mt: 4, position: 'relative' }}>
       <Typography variant="h4" gutterBottom>
