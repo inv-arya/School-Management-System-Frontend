@@ -13,7 +13,16 @@ import {
   Collapse,
   Box,
   Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
+  Stack,
 } from '@mui/material';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import { axiosInstance } from '../../api/axios';
 import { useAuth } from '../../auth/AuthContext';
 import withRoleAccess from '../../hoc/withRoleAccess';
@@ -32,6 +41,10 @@ const ExamList = () => {
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(5);
+  const [examToDelete, setExamToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+
 
   const fetchExams = async (page) => {
     try {
@@ -69,6 +82,20 @@ const ExamList = () => {
     setPage(value);
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!examToDelete) return;
+    try {
+      setDeleting(true);
+      await axiosInstance.delete(`/exams/${examToDelete}/`);
+      setExamToDelete(null);
+      fetchExams(page);
+    } catch (err) {
+      alert('Failed to delete exam.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Paper elevation={3} sx={{ p: 4, borderRadius: 4 }}>
@@ -97,6 +124,15 @@ const ExamList = () => {
                     <ListItem
                       sx={{ alignItems: 'flex-start' }}
                       secondaryAction={
+                        <Stack direction="row" spacing={1} sx={{
+                          float: 'right',
+                          mt: {
+                            xs: '5rem',    
+                            sm: '4rem',
+                            md: '4rem',
+                            lg: 0     
+                          }
+                        }}>
                         <>
                         {role === 'teacher' && (
                           <Button
@@ -118,6 +154,7 @@ const ExamList = () => {
                             </Button>
                         )}
                         </>
+                        </Stack>
                       }
                     >
                       <ListItemText
@@ -164,6 +201,27 @@ const ExamList = () => {
                             </Box>
                           ))
                         )}
+                        {role === 'teacher' && (
+                          <Box display="flex" gap={2} mt={2}>
+                            <Button
+                              variant="contained"
+                              color="warning"
+                              size="small"
+                              onClick={() => navigate(`/exams/update/${exam.id}`)}
+                            >
+                              Edit
+                            </Button>
+                            <Tooltip title="Delete Exam">
+                            <IconButton
+                                color="error"
+                                size="small"
+                                onClick={() => setExamToDelete(exam.id)}
+                              >
+                                <DeleteOutlineOutlinedIcon />
+                              </IconButton>
+                              </Tooltip>
+                          </Box>
+                        )}
                       </Box>
                     </Collapse>
                     <Divider />
@@ -185,6 +243,27 @@ const ExamList = () => {
       </Paper>
 
       <ProtectedCreateExamButton onClick={() => navigate('/exams/create')} />
+
+      <Dialog
+        open={!!examToDelete}
+        onClose={() => setExamToDelete(null)}
+      >
+        <DialogTitle>Delete Exam</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this exam? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setExamToDelete(null)} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" disabled={deleting}>
+            {deleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Container>
   );
 };

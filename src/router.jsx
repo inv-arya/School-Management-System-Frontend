@@ -15,6 +15,7 @@ import ForgotPassword from "./pages/ForgetPassword";
 import Exam from "./pages/Dashboard/Exam";
 import ExamCreate from "./pages/Dashboard/ExamCreate";
 import ExamAttempt from "./pages/Dashboard/ExamAttempt";
+import ExamUpdate from "./pages/Dashboard/ExamUpdate";
 
 
 const 
@@ -70,9 +71,13 @@ routesConfig = [
         path:"exams/create",
         element:<ExamCreate/>
       },
-       {
+      {
         path:"/exams/attempt/:examId",
         element:<ExamAttempt/>
+      },
+      {
+        path:"/exams/update/:examId",
+        element:<ExamUpdate/>
       },
     ],
   },

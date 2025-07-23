@@ -5,18 +5,27 @@ import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
-  Grid,
   CircularProgress,
   Pagination,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
   Paper,
   Box,
-  Fab,
-  Button,
-  Input,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
+
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../../api/axios';
-import AddIcon from '@mui/icons-material/Add';
+
 import withRoleAccess from '../../hoc/withRoleAccess';
 import { useAuth } from '../../auth/AuthContext';
 import withRoleFab from '../../components/RoleFab';
@@ -30,9 +39,9 @@ const Students = () => {
   const [csvFile, setCsvFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
 
-  const { user } = useAuth();
+  const { role } = useAuth();
   const navigate = useNavigate();
-  const pageSize = 5;
+  const pageSize = 2;
 
   const fetchStudents = async (page = 1) => {
     try {
@@ -76,18 +85,15 @@ const Students = () => {
       if (response.data.errors.length > 0) {
         console.error('Some rows failed:', response.data.errors);
       }
-      fetchStudents(); // reload data
+      fetchStudents();
     } catch (error) {
       setUploadStatus('Upload failed');
       console.error('CSV upload error:', error);
     }
   };
 
-  
   const ProtectedRegisterStudentButton = withRoleFab(['admin', 'teacher']);
 
-
-  // CSV Upload — admin only
   const CSVImportSection = () => (
     <Box sx={{ mb: 4 }}>
       <Typography variant="h6">Import Students from CSV</Typography>
@@ -113,7 +119,7 @@ const Students = () => {
   return (
     <Container sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
-        All Students
+        {role === 'student' ? 'Profile' : 'Students'}
       </Typography>
 
       <ProtectedCSVImportSection />
@@ -122,28 +128,72 @@ const Students = () => {
         <CircularProgress />
       ) : (
         <>
-          <Grid container spacing={3}>
-            {students.map((student) => (
-              <Grid item xs={12} sm={6} md={4} key={student.id}>
-                <Paper elevation={3} sx={{ p: 2 }}>
-                  <Typography variant="h6" gutterBottom>
-                    {student.first_name} {student.last_name}
-                  </Typography>
-                  <Box sx={{ fontSize: 14, color: 'text.secondary' }}>
-                    <div><strong>Username:</strong> {student.user.username}</div>
-                    <div><strong>Email:</strong> {student.email}</div>
-                    <div><strong>Phone:</strong> {student.phone_number}</div>
-                    <div><strong>Roll Number:</strong> {student.roll_number}</div>
-                    <div><strong>Grade:</strong> {student.grade}</div>
-                    <div><strong>Date of Birth:</strong> {student.date_of_birth}</div>
-                    <div><strong>Admission Date:</strong> {student.admission_date}</div>
-                    <div><strong>Status:</strong> {student.status}</div>
-                    <div><strong>Assigned Teacher:</strong> {student.assigned_teacher ? `#${student.assigned_teacher}` : 'Not Assigned'}</div>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: '#1976d2' }}>
+                  {[
+                    'Name',
+                    'Username',
+                    'Email',
+                    'Phone',
+                    'Roll Number',
+                    'Grade',
+                    'Date of Birth',
+                    'Admission Date',
+                    'Status',
+                    'Assigned Teacher',
+                    'Actions',
+                  ].map((header) => (
+                    <TableCell
+                      key={header}
+                      sx={{
+                        color: '#fff',
+                        fontWeight: 'bold',
+                        borderRight: '1px solid #ddd',
+                      }}
+                    >
+                      {header}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {students.map((student) => (
+                  <TableRow key={student.id} hover>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>
+                      {student.first_name} {student.last_name}
+                    </TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.user.username}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.email}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.phone_number}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.roll_number}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.grade}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.date_of_birth}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.admission_date}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.status}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>
+                      {student.assigned_teacher ? `#${student.assigned_teacher}` : 'Not Assigned'}
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Tooltip title="Edit Student">
+                          <IconButton color="primary" size="small">
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete Student">
+                          <IconButton color="error" size="small">
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
           {totalPages > 1 && (
             <Pagination

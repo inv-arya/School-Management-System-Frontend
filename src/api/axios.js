@@ -88,7 +88,6 @@ async function login({ username, password }) {
       username,
       password,
     });
-console.log('response');
 
     const { access, refresh, role, username: returnedUsername } = response.data;
 
