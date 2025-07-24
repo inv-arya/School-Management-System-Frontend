@@ -33,6 +33,8 @@ const RegisterTeacher = () => {
           email: data.email,
           password: data.password,
           role: 'teacher',
+          first_name: data.first_name,
+          last_name: data.last_name,
         },
         first_name: data.first_name,
         last_name: data.last_name,
@@ -70,9 +72,9 @@ const RegisterTeacher = () => {
       </Typography>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Grid container spacing={2}>
+        <Grid container spacing={2} sx={{display:'flex',flexDirection:'column'}}>
 
-          {/* User Fields */}
+          
           <Grid item xs={12} sm={6}>
             <TextField
               label="Username"

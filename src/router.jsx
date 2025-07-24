@@ -1,5 +1,5 @@
 
-import React from "react";
+
 import { useRoutes } from "react-router-dom";
 import AuthLayout from "./auth/AuthLayout";
 import Login from "./pages/Login";
@@ -13,6 +13,12 @@ import TeacherRegister from "./pages/Dashboard/TeacherRegister";
 import ResetPassword from "./pages/ResetPassword";
 import ForgotPassword from "./pages/ForgetPassword";
 import Exam from "./pages/Dashboard/Exam";
+import ExamCreate from "./pages/Dashboard/ExamCreate";
+import ExamAttempt from "./pages/Dashboard/ExamAttempt";
+import ExamUpdate from "./pages/Dashboard/ExamUpdate";
+import StudentEdit from "./pages/Dashboard/StudentEdit";
+import TeacherEdit from "./pages/Dashboard/TeacherEdit";
+import RoleBasedRoute from "./utils/RoleBasedRoute";
 
 
 const 
@@ -46,23 +52,64 @@ routesConfig = [
       },
       {
         path: "students/register",
-        element: <Register />,
+        element: (
+          <RoleBasedRoute allowedRoles={['admin']}>
+            <Register />
+          </RoleBasedRoute>),
       },
       {
         path: "teachers/register",
-        element: <TeacherRegister />,
+        element:(<RoleBasedRoute allowedRoles={['admin']}>
+                  <TeacherRegister />
+                </RoleBasedRoute>),
       },
       {
         path: "students",
-        element: <Students />,
+        element: (<RoleBasedRoute allowedRoles={['admin','teacher']}>
+                  <Students />
+                  </RoleBasedRoute>),
       },
       {
         path: "teachers",
-        element: <Teachers />,
+        element: (<RoleBasedRoute allowedRoles={['admin']}>
+          <Teachers />
+          </RoleBasedRoute>),
       },
       {
         path:"exams",
-        element:<Exam />
+        element: (<RoleBasedRoute allowedRoles={['student','teacher']}>
+                  <Exam/>
+                  </RoleBasedRoute>),
+      },
+      {
+        path:"exams/create",
+        element: (<RoleBasedRoute allowedRoles={['teacher']}>
+                  <ExamCreate/>
+                  </RoleBasedRoute>),
+      },
+      {
+        path:"/exams/attempt/:examId",
+        element: (<RoleBasedRoute allowedRoles={['student']}>
+                  <ExamAttempt/>
+                  </RoleBasedRoute>),
+      },
+      {
+        path:"/exams/update/:examId",
+        element: (<RoleBasedRoute allowedRoles={['student','teacher']}>
+                  <ExamUpdate/>
+                  </RoleBasedRoute>),
+      },
+      {
+         path: '/students/edit/:id',
+         element: (<RoleBasedRoute allowedRoles={['admin','teacher']}>
+                  <StudentEdit />
+                  </RoleBasedRoute>),
+      },
+      {
+        path: '/teachers/edit/:id',
+         element: (<RoleBasedRoute allowedRoles={['admin']}>
+                    <TeacherEdit />
+                  </RoleBasedRoute>),
       },
     ],
   },
