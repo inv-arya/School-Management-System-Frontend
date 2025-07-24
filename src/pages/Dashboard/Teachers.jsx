@@ -7,12 +7,20 @@ import {
   Pagination,
   Paper,
   Box,
-  Fab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../../api/axios';
-import withRoleAccess from '../../hoc/withRoleAccess';
+import withRoleFab from '../../components/RoleFab';
 
 const TeacherList = () => {
   const [teachers, setTeachers] = useState([]);
@@ -42,23 +50,20 @@ const TeacherList = () => {
 
   const totalPages = Math.ceil(count / pageSize);
 
-  const RegisterTeacherButton = ({ onClick }) => (
-    <Fab
-      color="primary"
-      aria-label="add"
-      onClick={onClick}
-      sx={{
-        position: 'fixed',
-        bottom: 32,
-        right: 32,
-        zIndex: 1000,
-      }}
-    >
-      <AddIcon />
-    </Fab>
-  );
-  const ProtectedRegisterTeacherButton = withRoleAccess(RegisterTeacherButton, ['admin']);
+  const handleSoftDelete = async (teacherId) => {
+    try {
+      await axiosInstance.patch(`/teachers/${teacherId}/`, {
+        status: 'inactive',
+      });
+      fetchTeachers(page);
+    } catch (error) {
+      console.error('Error soft deleting teacher:', error);
+    }
+  };
 
+  const ProtectedRegisterTeacherButton = withRoleFab(['admin']);
+
+  
   return (
     <Container sx={{ mt: 4, position: 'relative' }}>
       <Typography variant="h4" gutterBottom>
@@ -70,26 +75,78 @@ const TeacherList = () => {
         <CircularProgress />
       ) : (
         <>
-          <Grid container spacing={3}>
-            {teachers.map((teacher) => (
-              <Grid item xs={12} sm={6} md={4} key={teacher.id}>
-                <Paper elevation={3} sx={{ p: 2 }}>
-                  <Typography variant="h6" gutterBottom>
-                    {teacher.first_name} {teacher.last_name}
-                  </Typography>
-                  <Box sx={{ fontSize: 14, color: 'text.secondary' }}>
-                    <div><strong>Username:</strong> {teacher.user.username}</div>
-                    <div><strong>Email:</strong> {teacher.email}</div>
-                    <div><strong>Phone:</strong> {teacher.phone_number}</div>
-                    <div><strong>Subject:</strong> {teacher.subject_specialization}</div>
-                    <div><strong>Employee ID:</strong> {teacher.employee_id}</div>
-                    <div><strong>Date of Joining:</strong> {teacher.date_of_joining}</div>
-                    <div><strong>Status:</strong> {teacher.status}</div>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+           <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: '#1976d2' }}>
+                  {[
+                    'Name',
+                    'Username',
+                    'Email',
+                    'Phone',
+                    'Subject',
+                    'Employee ID',
+                    'Date of Joining',
+                    'Status',
+                    'Actions',
+                  ].map((header) => (
+                    <TableCell
+                      key={header}
+                      sx={{
+                        color: '#fff',
+                        fontWeight: 'bold',
+                        borderRight: '1px solid #ddd',
+                      }}
+                    >
+                      {header}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {teachers.map((teacher) => (
+                  <TableRow key={teacher.id} hover>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>
+                      {teacher.first_name} {teacher.last_name}
+                    </TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>
+                      {teacher.user.username}
+                    </TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{teacher.email}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{teacher.phone_number}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{teacher.subject_specialization}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{teacher.employee_id}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{teacher.date_of_joining}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{teacher.status}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Tooltip title="Edit Teacher">
+                          <IconButton
+                            color="primary"
+                            size="small"
+                            onClick={() => navigate(`/teachers/edit/${teacher.id}`)}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        {teacher.status !== 'inactive' && (
+                          <Tooltip title="Delete">
+                            <IconButton
+                              color="error"
+                              size="small"
+                              onClick={() => handleSoftDelete(teacher.id)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
           {totalPages > 1 && (
             <Pagination

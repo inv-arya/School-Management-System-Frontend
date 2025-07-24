@@ -1,7 +1,7 @@
 
 
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -10,9 +10,11 @@ import {
   Pagination,
   Paper,
   Box,
-  Fab,
-  Button,
-  Input,
+  Tooltip,
+  IconButton,
+  Card,
+  Avatar,
+  Grid,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../../api/axios';
@@ -82,24 +84,18 @@ const Students = () => {
     }
   };
 
-  // Floating Register Button — only for admin/teacher
-  const RegisterStudentButton = ({ onClick }) => (
-    <Fab
-      color="primary"
-      aria-label="add"
-      onClick={onClick}
-      sx={{
-        position: 'fixed',
-        bottom: 32,
-        right: 32,
-        zIndex: 1000,
-      }}
-    >
-      <AddIcon />
-    </Fab>
-  );
+  const handleSoftDelete = async (studentId) => {
+    try {
+      await axiosInstance.patch(`/students/${studentId}/`, {
+        status: 'inactive',
+      });
+      fetchStudents(page);
+    } catch (error) {
+      console.error('Failed to soft delete student:', error);
+    }
+  };
 
-  const ProtectedRegisterStudentButton = withRoleAccess(RegisterStudentButton, ['admin', 'teacher']);
+  const ProtectedRegisterStudentButton = withRoleFab(['admin', 'teacher']);
 
   // CSV Upload — admin only
   const CSVImportSection = () => (
@@ -134,30 +130,143 @@ const Students = () => {
 
       {loading ? (
         <CircularProgress />
+      ) : role === 'student' ? (
+        students.length > 0 ? (
+          <Card sx={{ p: 4, mt: 3, borderRadius: 4, boxShadow: 4, background: '#f5f7fa' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Avatar
+                sx={{ width: 80, height: 80, mr: 3, bgcolor: '#1976d2', fontSize: 32 }}
+              >
+                {students[0].first_name[0]}
+              </Avatar>
+              <Box>
+                <Typography variant="h5" fontWeight="bold">
+                  {students[0].first_name} {students[0].last_name}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  @{students[0].user.username}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Grid container spacing={3}>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Email:</strong> {students[0].email}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Phone Number:</strong> {students[0].phone_number}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Roll Number:</strong> {students[0].roll_number}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Grade:</strong> {students[0].grade}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Date of Birth:</strong> {students[0].date_of_birth}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Admission Date:</strong> {students[0].admission_date}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Status:</strong>
+                  <span style={{
+                    color: students[0].status === 'active' ? '#2e7d32' : '#d32f2f',
+                    fontWeight: 'bold',
+                    marginLeft: 6
+                  }}>
+                    {students[0].status.toUpperCase()}
+                  </span>
+                </Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1">
+                  <strong>Assigned Teacher:</strong> {students[0].assigned_teacher ? `#${students[0].assigned_teacher}` : 'Not Assigned'}
+                </Typography>
+              </Grid>
+            </Grid>
+          </Card>
+        ) : (
+          <Typography>No profile found.</Typography>
+        )
       ) : (
         <>
-          <Grid container spacing={3}>
-            {students.map((student) => (
-              <Grid item xs={12} sm={6} md={4} key={student.id}>
-                <Paper elevation={3} sx={{ p: 2 }}>
-                  <Typography variant="h6" gutterBottom>
-                    {student.first_name} {student.last_name}
-                  </Typography>
-                  <Box sx={{ fontSize: 14, color: 'text.secondary' }}>
-                    <div><strong>Username:</strong> {student.user.username}</div>
-                    <div><strong>Email:</strong> {student.email}</div>
-                    <div><strong>Phone:</strong> {student.phone_number}</div>
-                    <div><strong>Roll Number:</strong> {student.roll_number}</div>
-                    <div><strong>Grade:</strong> {student.grade}</div>
-                    <div><strong>Date of Birth:</strong> {student.date_of_birth}</div>
-                    <div><strong>Admission Date:</strong> {student.admission_date}</div>
-                    <div><strong>Status:</strong> {student.status}</div>
-                    <div><strong>Assigned Teacher:</strong> {student.assigned_teacher ? `#${student.assigned_teacher}` : 'Not Assigned'}</div>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: '#1976d2' }}>
+                  {[
+                    'Name',
+                    'Username',
+                    'Email',
+                    'Phone',
+                    'Roll Number',
+                    'Grade',
+                    'Date of Birth',
+                    'Admission Date',
+                    'Status',
+                    'Assigned Teacher',
+                    'Actions',
+                  ].map((header) => (
+                    <TableCell
+                      key={header}
+                      sx={{
+                        color: '#fff',
+                        fontWeight: 'bold',
+                        borderRight: '1px solid #ddd',
+                      }}
+                    >
+                      {header}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {students.map((student) => (
+                  <TableRow key={student.id} hover>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>
+                      {student.first_name} {student.last_name}
+                    </TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.user.username}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.email}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.phone_number}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.roll_number}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.grade}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.date_of_birth}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.admission_date}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.status}</TableCell>
+                    <TableCell sx={{ borderRight: '1px solid #eee' }}>
+                      {student.assigned_teacher ? `#${student.assigned_teacher}` : 'Not Assigned'}
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Tooltip title="Edit Student">
+                          <IconButton
+                            color="primary"
+                            size="small"
+                            onClick={() => navigate(`/students/edit/${student.id}`)}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        {student.status !== 'inactive' && (
+                          <Tooltip title="Soft Delete">
+                            <IconButton
+                              color="error"
+                              size="small"
+                              onClick={() => handleSoftDelete(student.id)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
           {totalPages > 1 && (
             <Pagination

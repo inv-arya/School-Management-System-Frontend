@@ -59,19 +59,122 @@ const ExamList = () => {
         )}
 
         {!loading && exams.length > 0 && (
-          <List>
-            {exams.map((exam) => (
-              <React.Fragment key={exam.id}>
-                <ListItem>
-                  <ListItemText
-                    primary={exam.title}
-                    secondary={`Created At: ${new Date(exam.created_at).toLocaleString()}`}
-                  />
-                </ListItem>
-                <Divider />
-              </React.Fragment>
-            ))}
-          </List>
+          <>
+            <List>
+              {exams.map((exam) => {
+                const isExpanded = expandedExamIds.includes(exam.id);
+                return (
+                  <React.Fragment key={exam.id}>
+                    <ListItem
+                      sx={{ alignItems: 'flex-start' }}
+                      secondaryAction={
+                        <Stack direction="row" spacing={1} sx={{
+                          float: 'right',
+                          mt: {
+                            xs: '5rem',    
+                            sm: '4rem',
+                            md: '4rem',
+                            lg: 0     
+                          }
+                        }}>
+                        <>
+                        {role === 'teacher' && (
+                          <Button
+                            onClick={() => toggleExpand(exam.id)}
+                            variant="outlined"
+                            size="small"
+                          >
+                            {isExpanded ? 'Hide Details' : 'View Details'}
+                          </Button>
+                        )}
+                        {role === 'student' && (
+                            <Button
+                              onClick={() => navigate(`/exams/attempt/${exam.id}`)}
+                              variant="contained"
+                              size="small"
+                              color="primary"
+                            >
+                              Attempt
+                            </Button>
+                        )}
+                        </>
+                        </Stack>
+                      }
+                    >
+                      <ListItemText
+                        primary={
+                          <Typography variant="h6">{exam.title}</Typography>
+                        }
+                        secondary={
+                          <Typography variant="body2" color="text.secondary">
+                            Duration: {exam.duration_minutes} minutes | Created
+                            At:{' '}
+                            {new Date(exam.created_at).toLocaleString()}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+
+                    <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                      <Box sx={{ pl: 4, pb: 2 }}>
+                        {!exam.questions || exam.questions.length === 0 ? (
+                          <Typography>No questions available.</Typography>
+                        ) : (
+                          exam.questions.map((question) => (
+                            <Box key={question.id} sx={{ mb: 3 }}>
+                              <Typography variant="subtitle1" fontWeight="bold">
+                                Q: {question.text}
+                              </Typography>
+                              <List dense>
+                                {question.options.map((option) => (
+                                  <ListItem key={option.id} sx={{ pl: 4 }}>
+                                    <ListItemText
+                                      primary={option.text}
+                                      primaryTypographyProps={{
+                                        color: option.is_correct
+                                          ? 'success.main'
+                                          : 'text.primary',
+                                        fontWeight: option.is_correct
+                                          ? 'bold'
+                                          : 'normal',
+                                      }}
+                                    />
+                                  </ListItem>
+                                ))}
+                              </List>
+                            </Box>
+                          ))
+                        )}
+                        {role === 'teacher' && (
+                          
+                            <Tooltip title="Delete Exam">
+                            <IconButton
+                                color="error"
+                                size="small"
+                                onClick={() => setExamToDelete(exam.id)}
+                              >
+                                <DeleteOutlineOutlinedIcon />
+                              </IconButton>
+                              </Tooltip>
+                          
+                        )}
+                      </Box>
+                    </Collapse>
+                    <Divider />
+                  </React.Fragment>
+                );
+              })}
+            </List>
+
+            <Box display="flex" justifyContent="center" mt={3}>
+              <Pagination
+                count={Math.ceil(count / pageSize)}
+                page={page}
+                onChange={handlePageChange}
+                color="primary"
+              />
+            </Box>
+          </>
         )}
       </Paper>
     </Container>
