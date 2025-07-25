@@ -1,7 +1,7 @@
 
 
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -17,7 +17,10 @@ import {
   Paper,
   Box,
   Tooltip,
-  IconButton,
+  Card,
+  Avatar,
+  Grid,
+
 } from '@mui/material';
 
 import EditIcon from '@mui/icons-material/Edit';
@@ -92,6 +95,19 @@ const Students = () => {
     }
   };
 
+
+  const handleSoftDelete = async (studentId) => {
+    try {
+      await axiosInstance.patch(`/students/${studentId}/`, {
+        status: 'inactive',
+      });
+      fetchStudents(page);
+    } catch (error) {
+      console.error('Failed to soft delete student:', error);
+    }
+  };
+
+
   const ProtectedRegisterStudentButton = withRoleFab(['admin', 'teacher']);
 
   const CSVImportSection = () => (
@@ -126,6 +142,65 @@ const Students = () => {
 
       {loading ? (
         <CircularProgress />
+      ) : role === 'student' ? (
+        students.length > 0 ? (
+          <Card sx={{ p: 4, mt: 3, borderRadius: 4, boxShadow: 4, background: '#f5f7fa' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Avatar
+                sx={{ width: 80, height: 80, mr: 3, bgcolor: '#1976d2', fontSize: 32 }}
+              >
+                {students[0].first_name[0]}
+              </Avatar>
+              <Box>
+                <Typography variant="h5" fontWeight="bold">
+                  {students[0].first_name} {students[0].last_name}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  @{students[0].user.username}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Grid container spacing={3}>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Email:</strong> {students[0].email}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Phone Number:</strong> {students[0].phone_number}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Roll Number:</strong> {students[0].roll_number}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Grade:</strong> {students[0].grade}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Date of Birth:</strong> {students[0].date_of_birth}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Admission Date:</strong> {students[0].admission_date}</Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1"><strong>Status:</strong>
+                  <span style={{
+                    color: students[0].status === 'active' ? '#2e7d32' : '#d32f2f',
+                    fontWeight: 'bold',
+                    marginLeft: 6
+                  }}>
+                    {students[0].status.toUpperCase()}
+                  </span>
+                </Typography>
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <Typography variant="body1">
+                  <strong>Assigned Teacher:</strong> {students[0].assigned_teacher ? `#${students[0].assigned_teacher}` : 'Not Assigned'}
+                </Typography>
+              </Grid>
+            </Grid>
+          </Card>
+        ) : (
+          <Typography>No profile found.</Typography>
+        )
       ) : (
         <>
           <TableContainer component={Paper}>
@@ -178,15 +253,27 @@ const Students = () => {
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Tooltip title="Edit Student">
-                          <IconButton color="primary" size="small">
+
+                          <IconButton
+                            color="primary"
+                            size="small"
+                            onClick={() => navigate(`/students/edit/${student.id}`)}
+                          >
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete Student">
-                          <IconButton color="error" size="small">
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        {student.status !== 'inactive' && (
+                          <Tooltip title="Soft Delete">
+                            <IconButton
+                              color="error"
+                              size="small"
+                              onClick={() => handleSoftDelete(student.id)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
                       </Box>
                     </TableCell>
                   </TableRow>

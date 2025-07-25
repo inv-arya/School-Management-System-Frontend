@@ -20,7 +20,9 @@ const PrivateRoute = ({ children }) => {
     );
   }
   
-  console.log(isAuthenticated,'11');
+
+  
+
   return isAuthenticated ? children : <Navigate to="/" />;
 };
 

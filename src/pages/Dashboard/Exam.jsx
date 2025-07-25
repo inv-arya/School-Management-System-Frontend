@@ -202,15 +202,6 @@ const ExamList = () => {
                           ))
                         )}
                         {role === 'teacher' && (
-                          <Box display="flex" gap={2} mt={2}>
-                            <Button
-                              variant="contained"
-                              color="warning"
-                              size="small"
-                              onClick={() => navigate(`/exams/update/${exam.id}`)}
-                            >
-                              Edit
-                            </Button>
                             <Tooltip title="Delete Exam">
                             <IconButton
                                 color="error"
@@ -220,7 +211,7 @@ const ExamList = () => {
                                 <DeleteOutlineOutlinedIcon />
                               </IconButton>
                               </Tooltip>
-                          </Box>
+
                         )}
                       </Box>
                     </Collapse>
