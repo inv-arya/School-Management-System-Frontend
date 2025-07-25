@@ -5,22 +5,33 @@ import { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
-  Grid,
   CircularProgress,
   Pagination,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
   Paper,
   Box,
   Tooltip,
-  IconButton,
   Card,
   Avatar,
   Grid,
+
 } from '@mui/material';
+
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../../api/axios';
-import AddIcon from '@mui/icons-material/Add';
+
 import withRoleAccess from '../../hoc/withRoleAccess';
 import { useAuth } from '../../auth/AuthContext';
+import withRoleFab from '../../components/RoleFab';
 
 const Students = () => {
   const [students, setStudents] = useState([]);
@@ -31,9 +42,9 @@ const Students = () => {
   const [csvFile, setCsvFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
 
-  const { user } = useAuth();
+  const { role } = useAuth();
   const navigate = useNavigate();
-  const pageSize = 5;
+  const pageSize = 2;
 
   const fetchStudents = async (page = 1) => {
     try {
@@ -77,12 +88,13 @@ const Students = () => {
       if (response.data.errors.length > 0) {
         console.error('Some rows failed:', response.data.errors);
       }
-      fetchStudents(); // reload data
+      fetchStudents();
     } catch (error) {
       setUploadStatus('Upload failed');
       console.error('CSV upload error:', error);
     }
   };
+
 
   const handleSoftDelete = async (studentId) => {
     try {
@@ -95,9 +107,9 @@ const Students = () => {
     }
   };
 
+
   const ProtectedRegisterStudentButton = withRoleFab(['admin', 'teacher']);
 
-  // CSV Upload — admin only
   const CSVImportSection = () => (
     <Box sx={{ mb: 4 }}>
       <Typography variant="h6">Import Students from CSV</Typography>
@@ -123,7 +135,7 @@ const Students = () => {
   return (
     <Container sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>
-        All Students
+        {role === 'student' ? 'Profile' : 'Students'}
       </Typography>
 
       <ProtectedCSVImportSection />
@@ -241,6 +253,7 @@ const Students = () => {
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Tooltip title="Edit Student">
+
                           <IconButton
                             color="primary"
                             size="small"
@@ -260,6 +273,7 @@ const Students = () => {
                             </IconButton>
                           </Tooltip>
                         )}
+
                       </Box>
                     </TableCell>
                   </TableRow>

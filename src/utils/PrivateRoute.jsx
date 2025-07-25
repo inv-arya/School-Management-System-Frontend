@@ -1,6 +1,7 @@
 
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { CircularProgress, Box } from "@mui/material";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated ,loading} = useAuth();
@@ -19,7 +20,9 @@ const PrivateRoute = ({ children }) => {
     );
   }
   
+
   
+
   return isAuthenticated ? children : <Navigate to="/" />;
 };
 
