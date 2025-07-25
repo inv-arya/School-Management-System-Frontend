@@ -50,6 +50,7 @@ const TeacherList = () => {
 
   const totalPages = Math.ceil(count / pageSize);
 
+
   const handleSoftDelete = async (teacherId) => {
     try {
       await axiosInstance.patch(`/teachers/${teacherId}/`, {
@@ -60,6 +61,7 @@ const TeacherList = () => {
       console.error('Error soft deleting teacher:', error);
     }
   };
+
 
   const ProtectedRegisterTeacherButton = withRoleFab(['admin']);
 

@@ -21,6 +21,7 @@ import TeacherEdit from "./pages/Dashboard/TeacherEdit";
 import RoleBasedRoute from "./utils/RoleBasedRoute";
 
 
+
 const 
 routesConfig = [ 
   {
@@ -110,6 +111,18 @@ routesConfig = [
          element: (<RoleBasedRoute allowedRoles={['admin']}>
                     <TeacherEdit />
                   </RoleBasedRoute>),
+      },
+      {
+        path:"exams/create",
+        element:<ExamCreate/>
+      },
+      {
+        path:"/exams/attempt/:examId",
+        element:<ExamAttempt/>
+      },
+      {
+        path:"/exams/update/:examId",
+        element:<ExamUpdate/>
       },
     ],
   },

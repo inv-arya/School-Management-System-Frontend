@@ -16,6 +16,8 @@ const Register = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [teacherId, setTeacherId] = useState(null);
+  const [allTeachers, setAllTeachers] = useState([]);
   const {
     register,
     handleSubmit,
@@ -64,6 +66,22 @@ const Register = () => {
       }
     }
   };
+  useEffect(() => {
+    if (role === 'teacher') {
+      axiosInstance.get('/teachers/me/')
+        .then((res) => {
+          setTeacherId(res.data.id);
+          setValue('assigned_teacher', res.data.id);
+        })
+        .catch((err) => console.error('Error fetching teacher:', err));
+    }
+
+    if (role === 'admin') {
+      axiosInstance.get('/teachers/')
+        .then((res) => setAllTeachers(res.data))
+        .catch((err) => console.error('Error fetching teacher list:', err));
+    }
+  }, [role, setValue]);
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
@@ -235,15 +253,19 @@ const Register = () => {
             </TextField>
           </Grid>
 
-          <Grid item xs={12}>
-            <TextField
-              label="Assigned Teacher ID"
-              fullWidth
-              {...register('assigned_teacher',{required: 'Assigned Teacher ID is required'})}
-              error={!!errors.assigned_teacher}
-              helperText={errors.assigned_teacher?.message}
-            />
-          </Grid>
+          {role === 'teacher' && teacherId && (
+            <input type="hidden" {...register('assigned_teacher', { required: true })} value={teacherId} />
+          )}
+
+          {role === 'admin' && (
+            <Grid item xs={12} sm={6}>
+              <TextField select label="Assigned Teacher" fullWidth {...register('assigned_teacher', { required: 'Select a teacher' })} error={!!errors.assigned_teacher} helperText={errors.assigned_teacher?.message}>
+                {allTeachers.map((t) => (
+                  <MenuItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          )}
 
           <Grid item xs={12}>
             <Box textAlign="right">

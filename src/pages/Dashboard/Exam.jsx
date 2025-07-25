@@ -9,29 +9,56 @@ import {
   ListItem,
   ListItemText,
   Divider,
+  Button,
+  Collapse,
+  Box,
+  Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
+  Stack,
 } from '@mui/material';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import { axiosInstance } from '../../api/axios';
 import { useAuth } from '../../auth/AuthContext';
 import withRoleAccess from '../../hoc/withRoleAccess';
+import withRoleFab from '../../components/RoleFab';
+import { useNavigate } from 'react-router-dom';
+
+const ProtectedCreateExamButton = withRoleFab(['teacher']);
 
 const ExamList = () => {
-  const { role } = useAuth(); 
+  const { role } = useAuth();
+  const navigate = useNavigate();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedExamIds, setExpandedExamIds] = useState([]);
+  const [count, setCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(5);
+  const [examToDelete, setExamToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const fetchExams = async () => {
+
+
+  const fetchExams = async (page) => {
     try {
+      setLoading(true);
       let endpoint = '';
       if (role === 'teacher') {
-        endpoint = '/exams/my/';
+        endpoint = `/exams/my/?page=${page}`;
       } else if (role === 'student') {
-        endpoint = '/exams/available/';
+        endpoint = `/exams/available/?page=${page}`;
       }
-      console.log("aese")
+
       const response = await axiosInstance.get(endpoint);
-      setExams(response.data.results); 
-      console.log(response.data)
+      setExams(response.data.results);
+      setCount(response.data.count);
     } catch (err) {
       setError('Failed to load exams.');
     } finally {
@@ -40,18 +67,47 @@ const ExamList = () => {
   };
 
   useEffect(() => {
-    fetchExams();
-  }, [role]);
+    fetchExams(page);
+  }, [role, page]);
+
+  const toggleExpand = (examId) => {
+    setExpandedExamIds((prev) =>
+      prev.includes(examId)
+        ? prev.filter((id) => id !== examId)
+        : [...prev, examId]
+    );
+  };
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!examToDelete) return;
+    try {
+      setDeleting(true);
+      await axiosInstance.delete(`/exams/${examToDelete}/`);
+      setExamToDelete(null);
+      fetchExams(page);
+    } catch (err) {
+      alert('Failed to delete exam.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          {role === 'teacher' && 'My Created Exams'}
-          {role === 'student' && 'Available Exams'}
+      <Paper elevation={3} sx={{ p: 4, borderRadius: 4 }}>
+        <Typography variant="h4" gutterBottom align="center">
+          {role === 'teacher' ? 'My Created Exams' : 'Available Exams'}
         </Typography>
 
-        {loading && <CircularProgress />}
+        {loading && (
+          <Box display="flex" justifyContent="center" py={4}>
+            <CircularProgress />
+          </Box>
+        )}
         {error && <Alert severity="error">{error}</Alert>}
 
         {!loading && exams.length === 0 && (
@@ -146,7 +202,6 @@ const ExamList = () => {
                           ))
                         )}
                         {role === 'teacher' && (
-                          
                             <Tooltip title="Delete Exam">
                             <IconButton
                                 color="error"
@@ -156,7 +211,7 @@ const ExamList = () => {
                                 <DeleteOutlineOutlinedIcon />
                               </IconButton>
                               </Tooltip>
-                          
+
                         )}
                       </Box>
                     </Collapse>
@@ -177,6 +232,29 @@ const ExamList = () => {
           </>
         )}
       </Paper>
+
+      <ProtectedCreateExamButton onClick={() => navigate('/exams/create')} />
+
+      <Dialog
+        open={!!examToDelete}
+        onClose={() => setExamToDelete(null)}
+      >
+        <DialogTitle>Delete Exam</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this exam? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setExamToDelete(null)} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" disabled={deleting}>
+            {deleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Container>
   );
 };
