@@ -54,7 +54,7 @@ routesConfig = [
       {
         path: "students/register",
         element: (
-          <RoleBasedRoute allowedRoles={['admin']}>
+          <RoleBasedRoute allowedRoles={['admin','teacher']}>
             <Register />
           </RoleBasedRoute>),
       },
@@ -112,18 +112,7 @@ routesConfig = [
                     <TeacherEdit />
                   </RoleBasedRoute>),
       },
-      {
-        path:"exams/create",
-        element:<ExamCreate/>
-      },
-      {
-        path:"/exams/attempt/:examId",
-        element:<ExamAttempt/>
-      },
-      {
-        path:"/exams/update/:examId",
-        element:<ExamUpdate/>
-      },
+      
     ],
   },
 ];

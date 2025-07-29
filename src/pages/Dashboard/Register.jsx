@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container, TextField, Button, Grid, Typography, MenuItem, Box, InputAdornment, IconButton
 } from '@mui/material';
@@ -6,6 +6,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../../api/axios';
+import { useAuth } from '../../auth/AuthContext';
 
 const statusOptions = [
   { value: 'active', label: 'Active' },
@@ -14,6 +15,7 @@ const statusOptions = [
 
 const Register = () => {
   const navigate = useNavigate();
+  const { role ,loading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [teacherId, setTeacherId] = useState(null);
@@ -23,8 +25,11 @@ const Register = () => {
     handleSubmit,
     watch,
     setError,
+    setValue,
     formState: { errors },
   } = useForm();
+
+  const assignedTeacher = watch('assigned_teacher');
 
   const onSubmit = async (data) => {
     try {
@@ -67,6 +72,9 @@ const Register = () => {
     }
   };
   useEffect(() => {
+
+    if (loading) return;
+
     if (role === 'teacher') {
       axiosInstance.get('/teachers/me/')
         .then((res) => {
@@ -78,10 +86,16 @@ const Register = () => {
 
     if (role === 'admin') {
       axiosInstance.get('/teachers/')
-        .then((res) => setAllTeachers(res.data))
+        .then((res) => {
+        const data = res.data.results;
+        setAllTeachers(data);
+        if (data.length > 0) {
+          setValue('assigned_teacher', data[0].id); 
+        }
+      })
         .catch((err) => console.error('Error fetching teacher list:', err));
     }
-  }, [role, setValue]);
+  }, [role, setValue,loading]);
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
@@ -259,7 +273,16 @@ const Register = () => {
 
           {role === 'admin' && (
             <Grid item xs={12} sm={6}>
-              <TextField select label="Assigned Teacher" fullWidth {...register('assigned_teacher', { required: 'Select a teacher' })} error={!!errors.assigned_teacher} helperText={errors.assigned_teacher?.message}>
+              
+              <TextField
+                select
+                label="Assigned Teacher"
+                fullWidth
+                value={assignedTeacher || ''}
+                onChange={(e) => setValue('assigned_teacher', e.target.value)}
+                error={!!errors.assigned_teacher}
+                helperText={errors.assigned_teacher?.message}
+              >
                 {allTeachers.map((t) => (
                   <MenuItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</MenuItem>
                 ))}

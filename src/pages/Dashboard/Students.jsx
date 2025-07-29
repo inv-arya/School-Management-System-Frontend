@@ -21,8 +21,9 @@ import {
   Avatar,
   Grid,
 
-} from '@mui/material';
 
+} from '@mui/material';
+import IconButton from '@mui/material/IconButton';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -37,30 +38,32 @@ const Students = () => {
   const [students, setStudents] = useState([]);
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
 
   const [csvFile, setCsvFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
 
-  const { role } = useAuth();
+  const { role , loading } = useAuth();
   const navigate = useNavigate();
-  const pageSize = 2;
+  const pageSize = 5;
 
   const fetchStudents = async (page = 1) => {
     try {
-      setLoading(true);
+      setIsLoadingStudents(true);;
       const response = await axiosInstance.get(`/students/?page=${page}`);
       setStudents(response.data.results);
       setCount(response.data.count);
     } catch (error) {
       console.error('Error fetching students:', error);
     } finally {
-      setLoading(false);
+      setIsLoadingStudents(false);;
     }
   };
 
   useEffect(() => {
+    if (!loading) {
     fetchStudents(page);
+  }
   }, [page]);
 
   const totalPages = Math.ceil(count / pageSize);
@@ -140,7 +143,7 @@ const Students = () => {
 
       <ProtectedCSVImportSection />
 
-      {loading ? (
+      {isLoadingStudents ? (
         <CircularProgress />
       ) : role === 'student' ? (
         students.length > 0 ? (

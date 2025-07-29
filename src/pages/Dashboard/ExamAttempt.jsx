@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import {
   Container,
   Paper,
@@ -26,7 +26,7 @@ const ExamAttempt = () => {
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null); 
-
+  const [autoSubmitTriggered, setAutoSubmitTriggered] = useState(false);
 
   useEffect(() => {
     const fetchExam = async () => {
@@ -48,13 +48,20 @@ const ExamAttempt = () => {
 
   // Countdown Timer
   useEffect(() => {
-    if (remainingTime === null || result) return;
+    if (remainingTime === null || result || autoSubmitTriggered) return;
+console.log('1');
 
     const timer = setInterval(() => {
       setRemainingTime((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleSubmit(true); 
+          
+            if (!autoSubmitTriggered) {
+            setAutoSubmitTriggered(true); // ✅ prevent double-submit
+            handleSubmit(true);           // ✅ auto submit
+          }
+                    
+          
           return 0;
         }
         return prev - 1;
@@ -62,7 +69,7 @@ const ExamAttempt = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [remainingTime, result]);
+  }, [remainingTime, result,autoSubmitTriggered]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -79,7 +86,8 @@ const ExamAttempt = () => {
   };
 
   const handleSubmit = async (auto = false) => {
-    if (!exam) return;
+    if (!exam || result) return;
+console.log('4');
 
     const answers = Object.entries(selectedAnswers).map(([questionId, selectedOptionId]) => ({
       question_id: parseInt(questionId),
