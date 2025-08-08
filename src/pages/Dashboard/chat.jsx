@@ -1,0 +1,155 @@
+import { useEffect, useState } from 'react';
+import {
+  Container,
+  Typography,
+  Box,
+  TextField,
+  Button,
+  Alert,
+  Divider,
+  Snackbar,
+} from '@mui/material';
+import { useParams, useNavigate } from 'react-router-dom';
+import { axiosInstance } from '../../api/axios';
+import { useAuth } from '../../auth/AuthContext';
+
+const Chat = () => {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [ws, setWs] = useState(null);
+  const [error, setError] = useState(null);
+  const [chatStatus, setChatStatus] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '' });
+  const { chatId } = useParams();
+  const { role, loading } = useAuth();
+  const navigate = useNavigate();
+
+  const API_BASE_URL = 'http://127.0.0.1:8000/api/chat/';
+  const WS_BASE_URL = 'ws://127.0.0.1:8000/ws/chat/';
+
+  useEffect(() => {
+    if (!loading) {
+      // Fetch chat status and messages
+      const fetchChatData = async () => {
+        try {
+          const response = await axiosInstance.get(`${API_BASE_URL}get-messages/${chatId}/`);
+          setMessages(response.data.results || response.data);
+          // Fetch status separately if not included in get-messages
+          const statusResponse = await axiosInstance.get(`${API_BASE_URL}check-status-by-id/${chatId}/`);
+          setChatStatus(statusResponse.data.status || 1);
+        } catch (err) {
+          setError('Failed to fetch chat data');
+          setSnackbar({ open: true, message: 'Failed to fetch chat data' });
+        }
+      };
+
+      fetchChatData();
+
+      // Initialize WebSocket
+      const token = localStorage.getItem('access');
+      const websocket = new WebSocket(`${WS_BASE_URL}${chatId}/?token=${token}`);
+      websocket.onopen = () => console.log('WebSocket connected');
+      websocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.error) {
+          setError(data.error);
+          setSnackbar({ open: true, message: data.error });
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              sender_type: data.sender.includes('Teacher') ? 0 : 1,
+              message: data.message,
+              timestamp: data.timestamp,
+            },
+          ]);
+        }
+      };
+      websocket.onerror = () => {
+        setError('WebSocket connection failed');
+        setSnackbar({ open: true, message: 'WebSocket connection failed' });
+      };
+      websocket.onclose = () => console.log('WebSocket closed');
+      setWs(websocket);
+
+      return () => websocket.close();
+    }
+  }, [chatId, loading]);
+
+  const sendMessage = () => {
+    if (newMessage.trim() && ws && chatStatus === 1) {
+      ws.send(JSON.stringify({ message: newMessage }));
+      setNewMessage('');
+    }
+  };
+
+  return (
+    <Container sx={{ mt: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4">Chat</Typography>
+        <Button variant="outlined" onClick={() => navigate('/students')}>
+          Back to Students
+        </Button>
+      </Box>
+      <Divider />
+      <Box sx={{ height: '60vh', overflowY: 'auto', mb: 2, p: 2, bgcolor: '#f5f7fa', borderRadius: 2 }}>
+        {messages.map((msg) => (
+          <Box
+            key={msg.id}
+            sx={{
+              mb: 2,
+              display: 'flex',
+              justifyContent: msg.sender_type === (role.toUpperCase() === 'TEACHER' ? 0 : 1) ? 'flex-end' : 'flex-start',
+            }}
+          >
+            <Box
+              sx={{
+                maxWidth: '70%',
+                p: 1,
+                borderRadius: 2,
+                bgcolor: msg.sender_type === (role.toUpperCase() === 'TEACHER' ? 0 : 1) ? 'primary.light' : 'grey.200',
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                {new Date(msg.timestamp).toLocaleTimeString()}
+              </Typography>
+              <Typography>{msg.message}</Typography>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+      {error && <Alert severity="error">{error}</Alert>}
+      {chatStatus !== 1 && (
+        <Alert severity="info">
+          {chatStatus === 0 ? 'Chat request pending approval' : 'Chat has been cancelled'}
+        </Alert>
+      )}
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <TextField
+          fullWidth
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type a message..."
+          disabled={chatStatus !== 1}
+          size="small"
+        />
+        <Button
+          variant="contained"
+          onClick={sendMessage}
+          disabled={chatStatus !== 1 || !newMessage.trim()}
+        >
+          Send
+        </Button>
+      </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ open: false, message: '' })}
+        message={snackbar.message}
+      />
+    </Container>
+  );
+};
+
+export default Chat;

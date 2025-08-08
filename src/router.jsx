@@ -19,6 +19,7 @@ import ExamUpdate from "./pages/Dashboard/ExamUpdate";
 import StudentEdit from "./pages/Dashboard/StudentEdit";
 import TeacherEdit from "./pages/Dashboard/TeacherEdit";
 import RoleBasedRoute from "./utils/RoleBasedRoute";
+import Chat from "./pages/Dashboard/chat";
 
 
 
@@ -112,7 +113,12 @@ routesConfig = [
                     <TeacherEdit />
                   </RoleBasedRoute>),
       },
-      
+      {
+        path:"/students/chat/:chatId",
+        element: (<RoleBasedRoute allowedRoles={['student','teacher']}>
+                  <Chat/>
+                  </RoleBasedRoute>),
+      },
     ],
   },
 ];
