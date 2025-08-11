@@ -20,6 +20,7 @@ import StudentEdit from "./pages/Dashboard/StudentEdit";
 import TeacherEdit from "./pages/Dashboard/TeacherEdit";
 import RoleBasedRoute from "./utils/RoleBasedRoute";
 import Chat from "./pages/Dashboard/chat";
+import ChatApproval from "./pages/ChatApproval";
 
 
 
@@ -40,6 +41,14 @@ routesConfig = [
        element: <ForgotPassword />
    },
     ],
+  },
+  {
+    path: "/chat/approve/:token",
+    element: <ChatApproval action="approve" />,
+  },
+  {
+    path: "/chat/cancel/:token",
+    element: <ChatApproval action="cancel" />,
   },
   {
     element: (
@@ -67,8 +76,9 @@ routesConfig = [
       },
       {
         path: "students",
-        element: (<RoleBasedRoute allowedRoles={['admin','teacher']}>
+        element: (<RoleBasedRoute allowedRoles={['admin','teacher','student']}>
                   <Students />
+
                   </RoleBasedRoute>),
       },
       {

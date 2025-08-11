@@ -48,27 +48,33 @@ const Students = () => {
     try {
       setIsLoadingStudents(true);
       const response = await axiosInstance.get(`/students/?page=${page}`);
-      const studentsWithChatStatus = await Promise.all(
-        response.data.results.map(async (student) => {
-          try {
-            const chatResponse = await axiosInstance.get(`/chat/check-status/${student.id}/`);
-            console.log(`Chat status for student ${student.id}:`, chatResponse.data);
-            return {
-              ...student,
-              chatStatus: chatResponse.data.status === undefined ? null : chatResponse.data.status,
-              chatId: chatResponse.data.id === undefined ? null : chatResponse.data.id,
-            };
-          } catch (error) {
-            console.error(`Error fetching chat status for student ${student.id}:`, {
-              status: error.response?.status,
-              data: error.response?.data,
-              message: error.message,
-            });
-            return { ...student, chatStatus: null, chatId: null };
-          }
-        })
-      );
-      setStudents(studentsWithChatStatus);
+      if (role === 'admin') {
+        // Admin: Do NOT fetch chat status to save API calls
+        setStudents(response.data.results);
+      } else {
+        // Teacher or Student: Fetch chat status for each student
+        const studentsWithChatStatus = await Promise.all(
+          response.data.results.map(async (student) => {
+            try {
+              const chatResponse = await axiosInstance.get(`/chat/check-status/${student.id}/`);
+              return {
+                ...student,
+                chatStatus: chatResponse.data.status === undefined ? null : chatResponse.data.status,
+                chatId: chatResponse.data.id === undefined ? null : chatResponse.data.id,
+              };
+            } catch (error) {
+              console.error(`Error fetching chat status for student ${student.id}:`, {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message,
+              });
+              return { ...student, chatStatus: null, chatId: null };
+            }
+          })
+        );
+        setStudents(studentsWithChatStatus);
+      }
+
       setCount(response.data.count);
     } catch (error) {
       console.error('Error fetching students:', {
@@ -129,11 +135,10 @@ const Students = () => {
 
   const handleMessageClick = async (studentId, chatStatus, chatId) => {
     try {
-      if (chatStatus === 1 && chatId) {
-        // Approved chat, redirect to chat page
+      if (chatId) {
         navigate(`/students/chat/${chatId}`);
       } else if (chatStatus === null) {
-        // No chat request, create one
+        
         const response = await axiosInstance.post(`${API_BASE_URL}create-chat-request/`, {
           student: studentId,
         });
@@ -142,10 +147,9 @@ const Students = () => {
           fetchStudents(page);
         }
       } else if (chatStatus === 0) {
-        // Pending chat, show message
         setSnackbar({ open: true, message: 'Chat request pending approval' });
       }
-      // chatStatus === 2 is disabled, so no action
+    
     } catch (error) {
       if (error.response?.data?.detail === 'Chat request already exists.') {
         setSnackbar({ open: true, message: 'Chat request already exists, waiting for approval' });
@@ -261,13 +265,13 @@ const Students = () => {
               <Grid xs={12}>
                 <Button
                   variant="contained"
-                  color="primary"
+                  color={students[0].chatStatus === 2 ? 'warning' : 'primary'} // Changed color if cancelled
                   startIcon={<MessageIcon />}
-                  onClick={() => handleMessageClick(students[0].id, students[0].chatStatus, students[0].chatId)}
-                  disabled={(students[0].chatStatus === undefined ? null : students[0].chatStatus) === 2}
-                  sx={{ mt: 2 }}
+                  onClick={() =>
+                    handleMessageClick(students[0].id, students[0].chatStatus, students[0].chatId)
+                  }
                 >
-                  Message Teacher
+                  {students[0].chatStatus === 2 ? 'View Chat' : 'Message Teacher'} {/* Change label */}
                 </Button>
               </Grid>
             </Grid>
@@ -347,16 +351,17 @@ const Students = () => {
                           </Tooltip>
                         )}
                         {role === 'teacher' && (
-                          <Tooltip title="Message Student">
+                          <Tooltip title={student.chatStatus === 2 ? 'View Chat History' : 'Message Student'}>
                             <IconButton
-                              color="info"
+                              color={student.chatStatus === 2 ? 'warning' : 'info'} 
                               size="small"
                               onClick={() => handleMessageClick(student.id, student.chatStatus, student.chatId)}
-                              disabled={(student.chatStatus === undefined ? null : student.chatStatus) === 2}
+                              
                             >
                               <MessageIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
+
                         )}
                       </Box>
                     </TableCell>

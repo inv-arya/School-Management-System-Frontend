@@ -29,44 +29,51 @@ const Chat = () => {
 
   useEffect(() => {
     if (!loading) {
-      // Fetch chat status and messages
+      
       const fetchChatData = async () => {
         try {
           const response = await axiosInstance.get(`${API_BASE_URL}get-messages/${chatId}/`);
           setMessages(response.data.results || response.data);
-          // Fetch status separately if not included in get-messages
+          
           const statusResponse = await axiosInstance.get(`${API_BASE_URL}check-status-by-id/${chatId}/`);
           setChatStatus(statusResponse.data.status || 1);
-        } catch (err) {
-          setError('Failed to fetch chat data');
-          setSnackbar({ open: true, message: 'Failed to fetch chat data' });
-        }
-      };
-
-      fetchChatData();
 
       // Initialize WebSocket
       const token = localStorage.getItem('access');
       const websocket = new WebSocket(`${WS_BASE_URL}${chatId}/?token=${token}`);
-      websocket.onopen = () => console.log('WebSocket connected');
       websocket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.error) {
-          setError(data.error);
-          setSnackbar({ open: true, message: data.error });
-        } else {
-          setMessages((prev) => [
+      const data = JSON.parse(event.data);
+      if (data.error) {
+        setError(data.error);
+        setSnackbar({ open: true, message: data.error });
+      } else {
+        // Check if message already exists to prevent duplicates
+        setMessages((prev) => {
+          const exists = prev.some(
+            (msg) =>
+              msg.timestamp === data.timestamp &&
+              msg.message === data.message &&
+              msg.sender_type === (data.sender.includes('Teacher') ? 0 : 1)
+          );
+          if (exists) return prev;
+
+          return [
             ...prev,
             {
-              id: Date.now(),
+              
+              id: data.id || data.timestamp || Date.now(),
               sender_type: data.sender.includes('Teacher') ? 0 : 1,
               message: data.message,
               timestamp: data.timestamp,
             },
-          ]);
-        }
-      };
-      websocket.onerror = () => {
+          ];
+        });
+      }
+};
+
+      websocket.onerror = (e) => {
+        console.log('WebSocket error', e);
+        
         setError('WebSocket connection failed');
         setSnackbar({ open: true, message: 'WebSocket connection failed' });
       };
@@ -74,6 +81,14 @@ const Chat = () => {
       setWs(websocket);
 
       return () => websocket.close();
+    
+        } catch (err) {
+          setError('Failed to fetch chat data');
+          setSnackbar({ open: true, message: 'Failed to fetch chat data' });
+        }
+      };
+
+      fetchChatData();
     }
   }, [chatId, loading]);
 

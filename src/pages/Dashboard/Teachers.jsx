@@ -15,9 +15,11 @@ import {
   TableRow,
   Tooltip,
   IconButton,
+  Snackbar,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CancelIcon from '@mui/icons-material/Cancel'; 
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance } from '../../api/axios';
 import withRoleFab from '../../components/RoleFab';
@@ -27,7 +29,7 @@ const TeacherList = () => {
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const navigate = useNavigate();
   const pageSize = 5;
 
@@ -62,6 +64,16 @@ const TeacherList = () => {
     }
   };
 
+  const handleBulkCancel = async (teacherId) => {
+    try {
+      await axiosInstance.post(`/chat/requests/bulk-cancel-by-teacher/${teacherId}/`);
+      setSnackbar({ open: true, message: 'Cancelled chat requests successfully', severity: 'success' });
+      fetchTeachers(page);  // Refresh list
+    } catch (error) {
+      console.error('Error bulk cancelling chat requests:', error);
+      setSnackbar({ open: true, message: 'Failed to cancel chat requests', severity: 'error' });
+    }
+  };
 
   const ProtectedRegisterTeacherButton = withRoleFab(['admin']);
 
@@ -142,6 +154,15 @@ const TeacherList = () => {
                             </IconButton>
                           </Tooltip>
                         )}
+                        <Tooltip title="Cancel Chat Requests">
+                              <IconButton
+                                color="warning"
+                                size="small"
+                                onClick={() => handleBulkCancel(teacher.id)}
+                              >
+                                <CancelIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                       </Box>
                     </TableCell>
                   </TableRow>
