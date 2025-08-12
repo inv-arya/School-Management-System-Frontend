@@ -43,12 +43,12 @@ routesConfig = [
     ],
   },
   {
-    path: "/chat/approve/:token",
-    element: <ChatApproval action="approve" />,
+    path: "/chat/:action/:token",
+    element: <ChatApproval />,
   },
   {
-    path: "/chat/cancel/:token",
-    element: <ChatApproval action="cancel" />,
+    path: "/chat/:action/:token",
+    element: <ChatApproval />,
   },
   {
     element: (

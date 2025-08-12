@@ -68,11 +68,11 @@ const TeacherList = () => {
     try {
       await axiosInstance.post(`/chat/requests/bulk-cancel-by-teacher/${teacherId}/`);
       setSnackbar({ open: true, message: 'Cancelled chat requests successfully', severity: 'success' });
-      fetchTeachers(page);  // Refresh list
-    } catch (error) {
-      console.error('Error bulk cancelling chat requests:', error);
-      setSnackbar({ open: true, message: 'Failed to cancel chat requests', severity: 'error' });
-    }
+      fetchTeachers(page);  
+      } catch (error) {
+    console.error('Error bulk cancelling chat requests:', error);
+    setSnackbar({ open: true, message: 'Failed to cancel chat requests', severity: 'error' });
+  }
   };
 
   const ProtectedRegisterTeacherButton = withRoleFab(['admin']);

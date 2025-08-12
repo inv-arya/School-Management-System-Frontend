@@ -1,21 +1,22 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button, Typography, Card, CardContent, CircularProgress } from "@mui/material";
 import axios from "axios";
 
-export default function ChatApproval({ action }) {
-  const { token } = useParams();
-  const navigate = useNavigate();
+export default function ChatApproval() {
+  const { action, token } = useParams();  
+  
   const [chatData, setChatData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // Fetch chat request details before approval/cancel
+    
     axios
-      .get(`${import.meta.env.VITE_API_URL}/api/chat/requests/${token}/`)
+      .get(`http://127.0.0.1:8000/api/chat/requests/${token}/`)
       .then((res) => {
+        console.log(res.data);
         setChatData(res.data);
       })
       .catch(() => {
@@ -61,24 +62,28 @@ export default function ChatApproval({ action }) {
 
         {!message && (
           <>
-            <Button
-              variant="contained"
-              color="success"
-              sx={{ mt: 3, mr: 2 }}
-              onClick={() => handleAction("approve")}
-              disabled={submitting}
-            >
-              Approve
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              sx={{ mt: 3 }}
-              onClick={() => handleAction("cancel")}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
+            {action === "approve" && (
+              <Button
+                variant="contained"
+                color="success"
+                sx={{ mt: 3, mr: 2 }}
+                onClick={() => handleAction("approve")}
+                disabled={submitting}
+              >
+                Approve
+              </Button>
+            )}
+            {action === "cancel" && (
+              <Button
+                variant="outlined"
+                color="error"
+                sx={{ mt: 3 }}
+                onClick={() => handleAction("cancel")}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+            )}
           </>
         )}
       </CardContent>
