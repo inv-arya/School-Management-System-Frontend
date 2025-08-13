@@ -72,7 +72,7 @@ async function refreshAccessToken() {
 
   try {
     const response = await axios.post(`${apiEndpoint}/auth/token/refresh/`, {
-      refresh,
+      "refresh":refresh
     });
     return response.data?.access;
   } catch (error) {

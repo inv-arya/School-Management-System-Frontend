@@ -36,7 +36,7 @@ const Chat = () => {
           setMessages(response.data.results || response.data);
           
           const statusResponse = await axiosInstance.get(`${API_BASE_URL}check-status-by-id/${chatId}/`);
-          setChatStatus(statusResponse.data.status || 1);
+          setChatStatus(statusResponse.data.status || 2);
 
       // Initialize WebSocket
       const token = localStorage.getItem('access');
