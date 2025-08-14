@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState , useRef, useCallback} from 'react';
 import {
   Container,
   Typography,
@@ -34,10 +34,14 @@ const TeacherList = () => {
   const [selectedTeacherId, setSelectedTeacherId] = useState(null);
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState('');
-
+  const [studentPage, setStudentPage] = useState(1);
+  const [hasMoreStudents, setHasMoreStudents] = useState(true);
+  const [loadingStudents, setLoadingStudents] = useState(false);
   const navigate = useNavigate();
   const pageSize = 5;
 
+  const observer = useRef();
+  
   const fetchTeachers = async (page = 1) => {
     try {
       setLoading(true);
@@ -68,20 +72,40 @@ const TeacherList = () => {
       console.error('Error soft deleting teacher:', error);
     }
   };
+  const fetchStudentsByTeacher = async (teacherId, page = 1) => {
+    if (loadingStudents) return;
+    setLoadingStudents(true);
+    try {
+      const res = await axiosInstance.get(`/students/by-teacher/${teacherId}/?page=${page}`);
+      const newStudents = Array.isArray(res.data.results) ? res.data.results : [];
+
+      setStudents((prev) => (page === 1 ? newStudents : [...prev, ...newStudents]));
+      setHasMoreStudents(res.data.next !== null);
+      setStudentPage(page);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+  
   const openCancelModal = async (teacherId) => {
     try {
       setSelectedTeacherId(teacherId);
       setSelectedStudent('');
-      const res = await axiosInstance.get(`/students/by-teacher/${teacherId}/`);
-      setStudents(Array.isArray(res.data.results) ? res.data.results : []);
+      setStudents([]);
+      setStudentPage(1);
+      setHasMoreStudents(true);
       setOpenModal(true);
+      await fetchStudentsByTeacher(teacherId, 1);
+      
     } catch (error) {
       console.error('Error fetching students:', error);
       setStudents([]);
       setOpenModal(true);
     }
   };
-
+  
   const handleBulkCancel = async (teacherId) => {
     try {
       await axiosInstance.post(`/chat/requests/bulk-cancel-by-teacher/${teacherId}/`);
@@ -112,6 +136,21 @@ const TeacherList = () => {
 
   const ProtectedRegisterTeacherButton = withRoleFab(['admin']);
 
+  const lastStudentRef = useCallback(
+    (node) => {
+      if (loadingStudents) return;
+      if (observer.current) observer.current.disconnect();
+
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMoreStudents) {
+          fetchStudentsByTeacher(selectedTeacherId, studentPage + 1);
+        }
+      });
+
+      if (node) observer.current.observe(node);
+    },
+    [loadingStudents, hasMoreStudents, studentPage, selectedTeacherId]
+  );
   
   return (
     <Container sx={{ mt: 4, position: 'relative' }}>
@@ -232,48 +271,83 @@ const TeacherList = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-      <Dialog open={openModal} onClose={() => setOpenModal(false)}>
-        <DialogTitle>Cancel Chat Requests</DialogTitle>
-        <DialogContent>
-          <Button
-            variant="contained"
-            color="error"
-            fullWidth
-            onClick={() => handleBulkCancel(selectedTeacherId)}
-          >
-            Cancel All
-          </Button>
+    <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth>
+      <DialogTitle>Cancel Chat</DialogTitle>
+      <DialogContent>
+        <Button
+          variant="contained"
+          color="error"
+          fullWidth
+          onClick={() => handleBulkCancel(selectedTeacherId)}
+        >
+          Cancel All
+        </Button>
 
-          <Select
-            value={selectedStudent}
-            onChange={(e) => setSelectedStudent(e.target.value)}
-            displayEmpty
-            fullWidth
-            sx={{ mt: 2 }}
-          >
-            <MenuItem value="">Select Student</MenuItem>
-            {students.map((s) => (
-              <MenuItem key={s.id} value={s.id}>
-                {s.first_name} {s.last_name}
-              </MenuItem>
-            ))}
-          </Select>
+        
+        <Box
+          sx={{ mt: 2, maxHeight: 300, overflowY: 'auto', border: '1px solid #ccc', p: 1 }}
+          
+        >
+          {students.map((s, index) => {
+              if (index === students.length - 1) {
+                
+                return (
+                  <Button
+                    key={s.id}
+                    ref={lastStudentRef}
+                    fullWidth
+                    variant={selectedStudent === s.id ? 'contained' : 'outlined'}
+                    color={selectedStudent === s.id ? 'warning' : 'primary'}
+                    sx={{ mb: 1, textAlign: 'left' }}
+                    onClick={() => setSelectedStudent(s.id)}
+                  >
+                    {s.first_name} {s.last_name}
+                  </Button>
+                );
+              }
+              return (
+                <Button
+                  key={s.id}
+                  fullWidth
+                  variant={selectedStudent === s.id ? 'contained' : 'outlined'}
+                  color={selectedStudent === s.id ? 'warning' : 'primary'}
+                  sx={{ mb: 1, textAlign: 'left' }}
+                  onClick={() => setSelectedStudent(s.id)}
+                >
+                  {s.first_name} {s.last_name}
+                </Button>
+              );
+            })}
 
-          <Button
-            variant="contained"
-            color="warning"
-            fullWidth
-            sx={{ mt: 2 }}
-            disabled={!selectedStudent}
-            onClick={() => handleCancelForStudent(selectedTeacherId, selectedStudent)}
-          >
-            Cancel for Selected Student
-          </Button>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenModal(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+            {loadingStudents && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+                <CircularProgress size={20} />
+              </Box>
+            )}
+
+            {!hasMoreStudents && students.length === 0 && (
+              <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
+                No students found
+              </Typography>
+            )}
+        </Box>
+
+        <Button
+          variant="contained"
+          color="warning"
+          fullWidth
+          sx={{ mt: 2 }}
+          disabled={!selectedStudent}
+          onClick={() => handleCancelForStudent(selectedTeacherId, selectedStudent)}
+        >
+          Cancel for Selected Student
+        </Button>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setOpenModal(false)}>Close</Button>
+      </DialogActions>
+    </Dialog>
+
     </Container>
   );
 };
