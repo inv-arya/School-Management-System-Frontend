@@ -265,13 +265,14 @@ const Students = () => {
               <Grid xs={12}>
                 <Button
                   variant="contained"
-                  color={students[0].chatStatus === 2 ? 'warning' : 'primary'} // Changed color if cancelled
+                  color={students[0].chatStatus === 2 ? 'warning' : 'primary'} 
                   startIcon={<MessageIcon />}
+                  disabled={role === 'student' && students[0].chatStatus === null && students[0].chatId === null}
                   onClick={() =>
                     handleMessageClick(students[0].id, students[0].chatStatus, students[0].chatId)
                   }
                 >
-                  {students[0].chatStatus === 2 ? 'View Chat' : 'Message Teacher'} {/* Change label */}
+                  {students[0].chatStatus === 2 ? 'View Chat' : 'Message Teacher'} 
                 </Button>
               </Grid>
             </Grid>

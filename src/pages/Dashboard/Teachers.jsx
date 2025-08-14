@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
-  
   CircularProgress,
   Pagination,
   Paper,
@@ -16,6 +15,7 @@ import {
   Tooltip,
   IconButton,
   Snackbar,
+  Dialog, DialogTitle, DialogContent, DialogActions,Button, MenuItem, Select,Alert
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -30,6 +30,11 @@ const TeacherList = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedTeacherId, setSelectedTeacherId] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState('');
+
   const navigate = useNavigate();
   const pageSize = 5;
 
@@ -63,16 +68,46 @@ const TeacherList = () => {
       console.error('Error soft deleting teacher:', error);
     }
   };
+  const openCancelModal = async (teacherId) => {
+    try {
+      setSelectedTeacherId(teacherId);
+      setSelectedStudent('');
+      const res = await axiosInstance.get(`/students/by-teacher/${teacherId}/`);
+      setStudents(Array.isArray(res.data.results) ? res.data.results : []);
+      setOpenModal(true);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      setStudents([]);
+      setOpenModal(true);
+    }
+  };
 
   const handleBulkCancel = async (teacherId) => {
     try {
       await axiosInstance.post(`/chat/requests/bulk-cancel-by-teacher/${teacherId}/`);
       setSnackbar({ open: true, message: 'Cancelled chat requests successfully', severity: 'success' });
-      fetchTeachers(page);  
+      fetchTeachers(page); 
+      setOpenModal(false); 
       } catch (error) {
     console.error('Error bulk cancelling chat requests:', error);
     setSnackbar({ open: true, message: 'Failed to cancel chat requests', severity: 'error' });
   }
+  };
+
+  const handleCancelForStudent = async (teacherId, studentId) => {
+    try {
+      await axiosInstance.post(`/chat/requests/cancel/${teacherId}/${studentId}/`);
+      setSnackbar({ open: true, message: 'Cancelled chat request for student successfully', severity: 'success' });
+      fetchTeachers(page);
+      setOpenModal(false);
+    } catch (error) {
+      console.error('Error cancelling chat request for student:', error);
+      const errorMsg =
+      error.response?.data?.detail ||
+      error.response?.data?.message ||
+      'Failed to cancel chat request';
+      setSnackbar({ open: true, message: 'Failed to cancel chat request', severity: 'error' });
+    }
   };
 
   const ProtectedRegisterTeacherButton = withRoleFab(['admin']);
@@ -155,14 +190,14 @@ const TeacherList = () => {
                           </Tooltip>
                         )}
                         <Tooltip title="Cancel Chat Requests">
-                              <IconButton
-                                color="warning"
-                                size="small"
-                                onClick={() => handleBulkCancel(teacher.id)}
-                              >
-                                <CancelIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
+                          <IconButton
+                            color="warning"
+                            size="small"
+                            onClick={() => openCancelModal(teacher.id)}
+                          >
+                            <CancelIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -183,6 +218,62 @@ const TeacherList = () => {
         </>
       )}
       <ProtectedRegisterTeacherButton onClick={() => navigate('/teachers/register')} />
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+      <Dialog open={openModal} onClose={() => setOpenModal(false)}>
+        <DialogTitle>Cancel Chat Requests</DialogTitle>
+        <DialogContent>
+          <Button
+            variant="contained"
+            color="error"
+            fullWidth
+            onClick={() => handleBulkCancel(selectedTeacherId)}
+          >
+            Cancel All
+          </Button>
+
+          <Select
+            value={selectedStudent}
+            onChange={(e) => setSelectedStudent(e.target.value)}
+            displayEmpty
+            fullWidth
+            sx={{ mt: 2 }}
+          >
+            <MenuItem value="">Select Student</MenuItem>
+            {students.map((s) => (
+              <MenuItem key={s.id} value={s.id}>
+                {s.first_name} {s.last_name}
+              </MenuItem>
+            ))}
+          </Select>
+
+          <Button
+            variant="contained"
+            color="warning"
+            fullWidth
+            sx={{ mt: 2 }}
+            disabled={!selectedStudent}
+            onClick={() => handleCancelForStudent(selectedTeacherId, selectedStudent)}
+          >
+            Cancel for Selected Student
+          </Button>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenModal(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
