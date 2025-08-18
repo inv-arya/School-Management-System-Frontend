@@ -15,7 +15,7 @@ import {
   Tooltip,
   IconButton,
   Snackbar,
-  Dialog, DialogTitle, DialogContent, DialogActions,Button,Alert
+  Dialog, DialogTitle, DialogContent, DialogActions,Button,Alert,TextField
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -37,6 +37,8 @@ const TeacherList = () => {
   const [studentPage, setStudentPage] = useState(1);
   const [hasMoreStudents, setHasMoreStudents] = useState(true);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+
   const navigate = useNavigate();
   const pageSize = 5;
 
@@ -108,9 +110,12 @@ const TeacherList = () => {
   
   const handleBulkCancel = async (teacherId) => {
     try {
-      await axiosInstance.post(`/chat/requests/bulk-cancel-by-teacher/${teacherId}/`);
+      await axiosInstance.put(`/chat/requests/bulk-cancel-by-teacher/${teacherId}/`,{
+      reason: cancelReason, 
+     });
       setSnackbar({ open: true, message: 'Cancelled chat requests successfully', severity: 'success' });
       fetchTeachers(page); 
+      setCancelReason("");
       setOpenModal(false); 
       } catch (error) {
     console.error('Error bulk cancelling chat requests:', error);
@@ -120,9 +125,12 @@ const TeacherList = () => {
 
   const handleCancelForStudent = async (teacherId, studentId) => {
     try {
-      await axiosInstance.post(`/chat/requests/cancel/${teacherId}/${studentId}/`);
+      await axiosInstance.put(`/chat/requests/cancel/${teacherId}/${studentId}/`,{
+      reason: cancelReason, // pass reason
+      });
       setSnackbar({ open: true, message: 'Cancelled chat request for student successfully', severity: 'success' });
       fetchTeachers(page);
+      setCancelReason("");
       setOpenModal(false);
     } catch (error) {
       console.error('Error cancelling chat request for student:', error);
@@ -274,6 +282,15 @@ const TeacherList = () => {
     <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth>
       <DialogTitle>Cancel Chat</DialogTitle>
       <DialogContent>
+        <TextField
+          label="Cancellation Reason"
+          multiline
+          rows={3}
+          fullWidth
+          value={cancelReason}
+          onChange={(e) => setCancelReason(e.target.value)}
+          sx={{ mb: 2 }}
+        />
         <Button
           variant="contained"
           color="error"
