@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Button, Typography, Card, CardContent, CircularProgress } from "@mui/material";
+import { Button, Typography, Card, CardContent, CircularProgress,TextField } from "@mui/material";
 import axios from "axios";
 
 export default function ChatApproval() {
@@ -10,13 +10,13 @@ export default function ChatApproval() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [reason, setReason] = useState("");
 
   useEffect(() => {
     
     axios
       .get(`http://127.0.0.1:8000/api/chat/requests/${token}/`)
       .then((res) => {
-        console.log(res.data);
         setChatData(res.data);
       })
       .catch(() => {
@@ -28,7 +28,9 @@ export default function ChatApproval() {
   const handleAction = (status) => {
     setSubmitting(true);
     axios
-      .put(`http://127.0.0.1:8000/api/chat/requests/${status}/${token}/`)
+      .put(`http://127.0.0.1:8000/api/chat/requests/${status}/${token}/`,{
+        reason: status === "cancel" ? reason : undefined, 
+      })
       .then((res) => {
         setMessage(`Chat request ${status}d successfully.`);
       })
@@ -74,15 +76,26 @@ export default function ChatApproval() {
               </Button>
             )}
             {action === "cancel" && (
+              <>
+              <TextField
+                  label="Cancellation Reason"
+                  multiline
+                  rows={3}
+                  fullWidth
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  sx={{ mt: 3 }}
+              />
               <Button
                 variant="outlined"
                 color="error"
                 sx={{ mt: 3 }}
                 onClick={() => handleAction("cancel")}
-                disabled={submitting}
+                disabled={submitting || !reason.trim()}
               >
                 Cancel
               </Button>
+              </>
             )}
           </>
         )}

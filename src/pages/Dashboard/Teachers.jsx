@@ -15,7 +15,7 @@ import {
   Tooltip,
   IconButton,
   Snackbar,
-  Dialog, DialogTitle, DialogContent, DialogActions,Button, MenuItem, Select,Alert
+  Dialog, DialogTitle, DialogContent, DialogActions,Button,Alert
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -285,7 +285,7 @@ const TeacherList = () => {
 
         
         <Box
-          sx={{ mt: 2, maxHeight: 300, overflowY: 'auto', border: '1px solid #ccc', p: 1 }}
+          sx={{ mt: 2, maxHeight: 100, overflowY: 'auto', border: '1px solid #ccc', p: 1 }}
           
         >
           {students.map((s, index) => {
