@@ -126,7 +126,7 @@ const TeacherList = () => {
   const handleCancelForStudent = async (teacherId, studentId) => {
     try {
       await axiosInstance.put(`/chat/requests/cancel/${teacherId}/${studentId}/`,{
-      reason: cancelReason, // pass reason
+      reason: cancelReason, 
       });
       setSnackbar({ open: true, message: 'Cancelled chat request for student successfully', severity: 'success' });
       fetchTeachers(page);
