@@ -9,7 +9,7 @@ import {
   Divider,
   Snackbar,
 } from '@mui/material';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate,useLocation } from 'react-router-dom';
 import { axiosInstance } from '../../api/axios';
 import { useAuth } from '../../auth/AuthContext';
 
@@ -23,7 +23,8 @@ const Chat = () => {
   const { chatId } = useParams();
   const { role, loading } = useAuth();
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const participantName = location.state?.participantName || "Unknown User";
   const API_BASE_URL = 'http://127.0.0.1:8000/api/chat/';
   const WS_BASE_URL = 'ws://127.0.0.1:8000/ws/chat/';
 
@@ -37,8 +38,8 @@ const Chat = () => {
           
           const statusResponse = await axiosInstance.get(`${API_BASE_URL}check-status-by-id/${chatId}/`);
           setChatStatus(statusResponse.data.status || 2);
-
-      // Initialize WebSocket
+          
+      
       const token = localStorage.getItem('access');
       const websocket = new WebSocket(`${WS_BASE_URL}${chatId}/?token=${token}`);
       websocket.onmessage = (event) => {
@@ -47,7 +48,7 @@ const Chat = () => {
         setError(data.error);
         setSnackbar({ open: true, message: data.error });
       } else {
-        // Check if message already exists to prevent duplicates
+      
         setMessages((prev) => {
           const exists = prev.some(
             (msg) =>
@@ -102,9 +103,9 @@ const Chat = () => {
   return (
     <Container sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Chat</Typography>
+        <Typography variant="h4">{participantName}</Typography>
         <Button variant="outlined" onClick={() => navigate('/students')}>
-          Back to Students
+          {role === 'student' ? 'Back to Profile' : 'Back to Students'}
         </Button>
       </Box>
       <Divider />

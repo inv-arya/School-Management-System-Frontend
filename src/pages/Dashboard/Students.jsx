@@ -133,10 +133,10 @@ const Students = () => {
     }
   };
 
-  const handleMessageClick = async (studentId, chatStatus, chatId) => {
+  const handleMessageClick = async (studentId, chatStatus, chatId,participantName) => {
     try {
       if (chatId) {
-        navigate(`/students/chat/${chatId}`);
+        navigate(`/students/chat/${chatId}`,{ state: { participantName }});
       } else if (chatStatus === null) {
         
         const response = await axiosInstance.post(`${API_BASE_URL}create-chat-request/`, {
@@ -211,7 +211,7 @@ const Students = () => {
               </Box>
             </Box>
 
-            <Grid container spacing={3}>
+            <Grid container spacing={3} sx={{display:'flex',flexDirection:'column'}}>
               <Grid xs={12} sm={6}>
                 <Typography variant="body1">
                   <strong>Email:</strong> {students[0].email}
@@ -259,7 +259,7 @@ const Students = () => {
               <Grid xs={12} sm={6}>
                 <Typography variant="body1">
                   <strong>Assigned Teacher:</strong>
-                  {students[0].assigned_teacher ? `#${students[0].assigned_teacher}` : 'Not Assigned'}
+                  {students[0].assigned_teacher ? `${students[0].assigned_teacher_name}` : 'Not Assigned'}
                 </Typography>
               </Grid>
               <Grid xs={12}>
@@ -269,7 +269,7 @@ const Students = () => {
                   startIcon={<MessageIcon />}
                   disabled={role === 'student' && students[0].chatStatus === null && students[0].chatId === null}
                   onClick={() =>
-                    handleMessageClick(students[0].id, students[0].chatStatus, students[0].chatId)
+                    handleMessageClick(students[0].id, students[0].chatStatus, students[0].chatId,students[0].assigned_teacher_name || "Teacher")
                   }
                 >
                   {students[0].chatStatus === 2 ? 'View Chat' : 'Message Teacher'} 
@@ -327,7 +327,7 @@ const Students = () => {
                     <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.admission_date}</TableCell>
                     <TableCell sx={{ borderRight: '1px solid #eee' }}>{student.status}</TableCell>
                     <TableCell sx={{ borderRight: '1px solid #eee' }}>
-                      {student.assigned_teacher ? `#${student.assigned_teacher}` : 'Not Assigned'}
+                      {student.assigned_teacher ? `${student.assigned_teacher_name}` : 'Not Assigned'}
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 1 }}>
@@ -356,7 +356,7 @@ const Students = () => {
                             <IconButton
                               color={student.chatStatus === 2 ? 'warning' : 'info'} 
                               size="small"
-                              onClick={() => handleMessageClick(student.id, student.chatStatus, student.chatId)}
+                              onClick={() => handleMessageClick(student.id, student.chatStatus, student.chatId,`${student.first_name} ${student.last_name}`)}
                               
                             >
                               <MessageIcon fontSize="small" />
