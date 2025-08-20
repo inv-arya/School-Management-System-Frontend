@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from "react-hook-form";
-import { Container, Typography, TextField, Button, Box , InputAdornment,IconButton} from "@mui/material";
+import { Container, Typography, TextField, Button, Box , InputAdornment,IconButton,Snackbar,Alert} from "@mui/material";
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/axios";
@@ -19,8 +19,13 @@ export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const { setIsAuthenticated, setRole } = useAuth();
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'error' });
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
 
-    const onSubmit = async (data) => {
+
+  const onSubmit = async (data) => {
         try {
         const { role } = await login({
         username: data.username,
@@ -33,12 +38,21 @@ export default function Login() {
         navigate("/dashboard");
         } catch (error) {
         
-        setError("password", {
-            type: "manual",
-            message: "Invalid username or password",
-        });
+        let message = "Invalid username or password";
+
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (detail === "No active account found with the given credentials") {
+          message = "Invalid username or password";
+        } else if (detail === "Your account has been restricted. Please contact admin.") {
+          message = detail;
         }
-    };
+      }
+
+      setSnackbar({ open: true, message, severity: 'error' });
+        
+        }
+  };
 
   return (
     <Container maxWidth="xs" sx={{ mt: 8 }}>
@@ -94,6 +108,16 @@ export default function Login() {
            <Link to="/forgot-password">Forgot Password?</Link>
         </Typography>
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

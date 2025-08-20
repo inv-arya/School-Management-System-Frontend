@@ -25,7 +25,6 @@ const Chat = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const participantName = location.state?.participantName || "Unknown User";
-  const API_BASE_URL = 'http://127.0.0.1:8000/api/chat/';
   const WS_BASE_URL = 'ws://127.0.0.1:8000/ws/chat/';
 
   useEffect(() => {
@@ -33,10 +32,10 @@ const Chat = () => {
       
       const fetchChatData = async () => {
         try {
-          const response = await axiosInstance.get(`${API_BASE_URL}get-messages/${chatId}/`);
+          const response = await axiosInstance.get(`/chat/get-messages/${chatId}/`);
           setMessages(response.data.results || response.data);
           
-          const statusResponse = await axiosInstance.get(`${API_BASE_URL}check-status-by-id/${chatId}/`);
+          const statusResponse = await axiosInstance.get(`/chat/check-status-by-id/${chatId}/`);
           setChatStatus(statusResponse.data.status || 2);
           
       

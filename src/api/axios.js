@@ -30,8 +30,9 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-   
-
+     if (originalRequest.url.includes("/auth/token/")) {
+      return Promise.reject(error); 
+    }
    
     if (
       error.response?.status === 401  &&
@@ -88,7 +89,8 @@ async function login({ username, password }) {
       username,
       password,
     });
-
+    console.log(response);
+    
     const { access, refresh, role, username: returnedUsername } = response.data;
 
     localStorage.setItem("access", access);
