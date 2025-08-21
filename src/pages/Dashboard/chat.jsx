@@ -77,10 +77,20 @@ const Chat = () => {
         setError('WebSocket connection failed');
         setSnackbar({ open: true, message: 'WebSocket connection failed' });
       };
-      websocket.onclose = () => console.log('WebSocket closed');
-      setWs(websocket);
+      websocket.onclose = (event) => {
+            console.log("WebSocket closed", event);
+            if (event.code === 4001) {
+              setSnackbar({ open: true, message: "Your account has been deactivated by the admin." });
+              setTimeout(() => {
+                localStorage.clear(); 
+                navigate("/");   
+              }, 2000);
+            }
+          };
 
-      return () => websocket.close();
+          setWs(websocket);
+
+          return () => websocket.close();
     
         } catch (err) {
           setError('Failed to fetch chat data');

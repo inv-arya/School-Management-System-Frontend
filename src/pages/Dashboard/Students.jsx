@@ -42,17 +42,17 @@ const Students = () => {
   const navigate = useNavigate();
   const pageSize = 5;
 
-  const API_BASE_URL = 'http://127.0.0.1:8000/api/chat/';
+  
 
   const fetchStudents = async (page = 1) => {
     try {
       setIsLoadingStudents(true);
       const response = await axiosInstance.get(`/students/?page=${page}`);
       if (role === 'admin') {
-        // Admin: Do NOT fetch chat status to save API calls
+        
         setStudents(response.data.results);
       } else {
-        // Teacher or Student: Fetch chat status for each student
+        
         const studentsWithChatStatus = await Promise.all(
           response.data.results.map(async (student) => {
             try {
@@ -139,7 +139,7 @@ const Students = () => {
         navigate(`/students/chat/${chatId}`,{ state: { participantName }});
       } else if (chatStatus === null) {
         
-        const response = await axiosInstance.post(`${API_BASE_URL}create-chat-request/`, {
+        const response = await axiosInstance.post(`/chat/create-chat-request/`, {
           student: studentId,
         });
         if (response.status === 201) {
