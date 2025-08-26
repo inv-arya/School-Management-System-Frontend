@@ -21,6 +21,8 @@ import TeacherEdit from "./pages/Dashboard/TeacherEdit";
 import RoleBasedRoute from "./utils/RoleBasedRoute";
 import Chat from "./pages/Dashboard/chat";
 import ChatApproval from "./pages/ChatApproval";
+import TeacherAssigment from "./pages/Dashboard/TeacherAssigment";
+import AssignmentCreate from "./pages/Dashboard/AssigmentCreate";
 
 
 
@@ -127,6 +129,18 @@ routesConfig = [
         path:"/students/chat/:chatId",
         element: (<RoleBasedRoute allowedRoles={['student','teacher']}>
                   <Chat/>
+                  </RoleBasedRoute>),
+      },
+      {
+        path:"/teacher-assignments",
+        element: (<RoleBasedRoute allowedRoles={['teacher']}>
+                  <TeacherAssigment />
+                  </RoleBasedRoute>),
+      },
+      {
+        path:"/teacher-assignments/create",
+        element: (<RoleBasedRoute allowedRoles={['teacher']}>
+                  <AssignmentCreate />
                   </RoleBasedRoute>),
       },
     ],
