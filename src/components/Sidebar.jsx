@@ -40,6 +40,7 @@ const Sidebar = ({ onDrawerToggle, mobileOpen }) => {
   } else if (role === "student") {
     navItems.push({ text: "My Profile", path: "/students" });
     navItems.push({ text: "Exam", path: "/exams" });
+    navItems.push({ text: "Assignment", path: "/student-assignments" });
   }
 
   const drawerContent = (

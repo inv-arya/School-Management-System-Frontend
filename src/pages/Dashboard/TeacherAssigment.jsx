@@ -106,7 +106,7 @@ const TeacherAssigment = () => {
               </Button>
               <IconButton
                 color="primary"
-                onClick={() => navigate(`/assignments/${assignment.id}/edit`)}
+                onClick={() => navigate(`/teacher-assignments/edit/${assignment.id}`)}
               >
                 <EditIcon />
               </IconButton>
@@ -124,7 +124,7 @@ const TeacherAssigment = () => {
         </Accordion>
       ))}
 
-      {/* Floating Add Button */}
+      
       <Fab
         color="primary"
         sx={{ position: "fixed", bottom: 20, right: 20 }}
@@ -133,7 +133,7 @@ const TeacherAssigment = () => {
         <AddIcon />
       </Fab>
 
-      {/* Delete Confirmation */}
+      
       <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
         <DialogTitle>Are you sure you want to delete this assignment?</DialogTitle>
         <DialogActions>

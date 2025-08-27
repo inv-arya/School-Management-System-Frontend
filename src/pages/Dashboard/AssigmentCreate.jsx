@@ -1,4 +1,4 @@
-import React from "react";
+import React , { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   Box,
@@ -10,8 +10,14 @@ import {
 import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { axiosInstance } from "../../api/axios";
+import { useNavigate } from "react-router-dom";
 
 const AssignmentCreate = () => {
+  const [deadline, setDeadline] = useState(null);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const [fileName, setFileName] = useState("");
+  const [fileError, setFileError] = useState("");
   const {
     control,
     register,
@@ -22,7 +28,15 @@ const AssignmentCreate = () => {
 
   const onSubmit = async (data) => {
     try {
-      
+      const now = new Date();
+      if (!deadline || deadline <= now) {
+        setError("Deadline must be in the future.");
+        return;
+      }
+
+      if (fileError) {    
+        return;
+      }
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("description", data.description);
@@ -34,8 +48,11 @@ const AssignmentCreate = () => {
       if (data.reference_files && data.reference_files[0]) {
         formData.append("reference_files", data.reference_files[0]);
       }
+      
+      setError("");
+      console.log("Form submitted with deadline:", deadline);
 
-      const response = await axiosInstance.post("/api/assignments/", formData, {
+      const response = await axiosInstance.post("/assignments/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -43,8 +60,41 @@ const AssignmentCreate = () => {
 
       console.log("Assignment created:", response.data);
       reset();
+      setFileName("");
+      navigate("/teacher-assignments");
     } catch (error) {
       console.error("Error creating assignment:", error.response?.data || error);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    let errorMsg = "";
+
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "application/vnd.ms-powerpoint",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      errorMsg = "Invalid file type. Allowed: PDF, JPEG, PNG, PPTX, PPT";
+    }
+
+    const maxSize = 5 * 1024 * 1024; 
+    if (file.size > maxSize) {
+      errorMsg = "File size must be less than 5MB.";
+    }
+
+    if (errorMsg) {
+      setFileError(errorMsg);
+      setFileName("");
+    } else {
+      setFileError("");
+      setFileName(file.name);
     }
   };
 
@@ -101,28 +151,36 @@ const AssignmentCreate = () => {
         <TextField
           select
           fullWidth
+          defaultValue="1"
           label="Grade"
           {...register("grade", { required: "Grade is required" })}
           error={!!errors.grade}
           helperText={errors.grade?.message}
           margin="normal"
         >
-          <MenuItem value="9">9</MenuItem>
-          <MenuItem value="10">10</MenuItem>
-          <MenuItem value="11">11</MenuItem>
-          <MenuItem value="12">12</MenuItem>
+          {[...Array(12)].map((_, i) => (
+            <MenuItem key={i + 1} value={i + 1}>
+              {i + 1}
+            </MenuItem>
+          ))}
         </TextField>
 
         
         <Controller
           name="deadline"
           control={control}
+          defaultValue={null}
           rules={{ required: "Deadline is required" }}
           render={({ field }) => (
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DateTimePicker
                 label="Deadline"
-                {...field}
+                value={field.value ?? null}   
+                onChange={(newValue) => {
+                  field.onChange(newValue);
+                  setDeadline(newValue);
+                }}
+                minDateTime={new Date()}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -147,7 +205,7 @@ const AssignmentCreate = () => {
             min: { value: 1, message: "Must be at least 1" },
           })}
           error={!!errors.max_marks}
-          helperText={errors.max_marks?.message}
+          helperText={errors.deadline?.message || error}
           margin="normal"
         />
 
@@ -158,10 +216,19 @@ const AssignmentCreate = () => {
             type="file"
             hidden
             {...register("reference_files")}
+            onChange={handleFileChange}
           />
         </Button>
-
-        
+        {fileName && (
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            Selected file: {fileName}
+          </Typography>
+        )}
+        {fileError && (   
+          <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+            {fileError}
+          </Typography>
+        )}
         <Button
           type="submit"
           variant="contained"

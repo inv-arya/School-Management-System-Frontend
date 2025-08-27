@@ -1,19 +1,26 @@
-import  { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   Container,
   Typography,
   TextField,
   Button,
-  MenuItem,
   Paper,
   CircularProgress,
-  Box
-} from '@mui/material';
-import { useForm } from 'react-hook-form';
-import { useParams, useNavigate } from 'react-router-dom';
-import { axiosInstance } from '../../api/axios';
+  Box,
+} from "@mui/material";
+import { useForm } from "react-hook-form";
+import { useParams, useNavigate } from "react-router-dom";
+import { axiosInstance } from "../../api/axios";
 
-const TeacherEdit = () => {
+const allowedTypes = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-powerpoint",
+];
+
+const AssignmentEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -21,61 +28,87 @@ const TeacherEdit = () => {
     register,
     handleSubmit,
     reset,
-    watch,
-    formState: { errors }
+    formState: { errors },
   } = useForm({
     defaultValues: {
-      status: 'active'
-    }
+      title: "",
+      description: "",
+      subject: "",
+      grade: "",
+      deadline: "",
+      max_marks: "",
+    },
   });
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [serverError, setServerError] = useState('');
-
-  const watchedStatus = watch('status');
+  const [serverError, setServerError] = useState("");
 
   useEffect(() => {
-    const fetchTeacher = async () => {
+    const fetchAssignment = async () => {
       try {
-        const response = await axiosInstance.get(`/teachers/${id}/`);
-        const data = response.data;
+        const res = await axiosInstance.get(`/assignments/${id}/`);
+        const data = res.data;
 
         reset({
-          first_name: data.first_name,
-          last_name: data.last_name,
-          email: data.email,
-          phone_number: data.phone_number,
-          employee_id: data.employee_id,
-          subject_specialization: data.subject_specialization,
-          date_of_joining: data.date_of_joining,
-          status: data.status || 'active'
+          title: data.title,
+          description: data.description,
+          subject: data.subject,
+          grade: data.grade,
+          deadline: data.deadline?.slice(0, 16), // yyyy-MM-ddTHH:mm
+          max_marks: data.max_marks,
         });
 
         setLoading(false);
-      } catch (error) {
-        setServerError('Failed to load teacher data.');
+      } catch {
+        setServerError("Failed to load assignment data.");
         setLoading(false);
       }
     };
 
-    fetchTeacher();
+    fetchAssignment();
   }, [id, reset]);
 
   const onSubmit = async (formData) => {
     setSubmitting(true);
-    setServerError('');
+    setServerError("");
 
     try {
-      await axiosInstance.patch(`/teachers/${id}/`, {
-        ...formData
+      const deadlineDate = new Date(formData.deadline);
+      if (deadlineDate <= new Date()) {
+        setServerError("Deadline must be in the future.");
+        setSubmitting(false);
+        return;
+      }
+
+      const data = new FormData();
+      data.append("title", formData.title);
+      data.append("description", formData.description);
+      data.append("subject", formData.subject);
+      data.append("grade", formData.grade);
+      data.append("deadline", formData.deadline);
+      data.append("max_marks", formData.max_marks);
+
+      if (formData.reference_files?.[0]) {
+        const file = formData.reference_files[0];
+        if (!allowedTypes.includes(file.type)) {
+          setServerError("Invalid file type. Allowed: PDF, JPG, PNG, PPT, PPTX.");
+          setSubmitting(false);
+          return;
+        }
+        data.append("reference_files", file);
+      }
+
+      await axiosInstance.put(`/assignments/${id}/`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      navigate('/teachers');
-    } catch (error) {
-      if (error.response?.data) {
-        setServerError(JSON.stringify(error.response.data));
+
+      navigate("/assignments");
+    } catch (err) {
+      if (err.response?.data) {
+        setServerError(JSON.stringify(err.response.data));
       } else {
-        setServerError('Update failed.');
+        setServerError("Update failed.");
       }
     } finally {
       setSubmitting(false);
@@ -94,81 +127,79 @@ const TeacherEdit = () => {
     <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h5" gutterBottom>
-          Edit Teacher
+          Edit Assignment
         </Typography>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <TextField
             fullWidth
-            label="First Name"
-            {...register('first_name', { required: true })}
-            error={!!errors.first_name}
-            helperText={errors.first_name && 'Required'}
+            label="Title"
+            {...register("title", { required: true })}
+            error={!!errors.title}
+            helperText={errors.title && "Required"}
             margin="normal"
           />
+
           <TextField
             fullWidth
-            label="Last Name"
-            {...register('last_name', { required: true })}
-            error={!!errors.last_name}
-            helperText={errors.last_name && 'Required'}
+            label="Description"
+            {...register("description", { required: true })}
+            error={!!errors.description}
+            helperText={errors.description && "Required"}
+            margin="normal"
+            multiline
+            rows={3}
+          />
+
+          <TextField
+            fullWidth
+            label="Subject"
+            {...register("subject", { required: true })}
+            error={!!errors.subject}
+            helperText={errors.subject && "Required"}
             margin="normal"
           />
+
           <TextField
             fullWidth
-            label="Email"
-            {...register('email', { required: true })}
-            error={!!errors.email}
-            helperText={errors.email && 'Required'}
+            label="Grade"
+            {...register("grade", { required: true })}
+            error={!!errors.grade}
+            helperText={errors.grade && "Required"}
             margin="normal"
           />
+
           <TextField
             fullWidth
-            label="Phone Number"
-            {...register('phone_number', { required: true })}
-            error={!!errors.phone_number}
-            helperText={errors.phone_number && 'Required'}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Subject Specialization"
-            {...register('subject_specialization', { required: true })}
-            error={!!errors.subject_specialization}
-            helperText={errors.subject_specialization && 'Required'}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Employee ID"
-            {...register('employee_id', { required: true })}
-            error={!!errors.employee_id}
-            helperText={errors.employee_id && 'Required'}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Date of Joining"
-            type="date"
-            {...register('date_of_joining', { required: true })}
+            label="Deadline"
+            type="datetime-local"
+            {...register("deadline", { required: true })}
             InputLabelProps={{ shrink: true }}
-            error={!!errors.date_of_joining}
-            helperText={errors.date_of_joining && 'Required'}
+            error={!!errors.deadline}
+            helperText={errors.deadline && "Required"}
             margin="normal"
           />
+
           <TextField
-            select
             fullWidth
-            label="Status"
-            {...register('status', { required: true })}
-            error={!!errors.status}
-            helperText={errors.status && 'Required'}
+            label="Max Marks"
+            type="number"
+            {...register("max_marks", {
+              required: true,
+              min: { value: 1, message: "Must be at least 1" },
+            })}
+            error={!!errors.max_marks}
+            helperText={errors.max_marks?.message || (errors.max_marks && "Required")}
             margin="normal"
-            value={watchedStatus || ''}
-          >
-            <MenuItem value="active">Active</MenuItem>
-            <MenuItem value="inactive">Inactive</MenuItem>
-          </TextField>
+          />
+
+          <Box mt={2}>
+            <input
+              type="file"
+              {...register("reference_files")}
+              accept=".pdf,.jpg,.jpeg,.png,.ppt,.pptx"
+            />
+          </Box>
 
           {serverError && (
             <Typography color="error" mt={2}>
@@ -183,7 +214,7 @@ const TeacherEdit = () => {
             sx={{ mt: 3 }}
             disabled={submitting}
           >
-            {submitting ? 'Updating...' : 'Update Teacher'}
+            {submitting ? "Updating..." : "Update Assignment"}
           </Button>
         </form>
       </Paper>
@@ -191,4 +222,4 @@ const TeacherEdit = () => {
   );
 };
 
-export default TeacherEdit;
+export default AssignmentEdit;

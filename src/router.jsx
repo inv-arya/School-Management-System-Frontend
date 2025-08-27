@@ -23,6 +23,10 @@ import Chat from "./pages/Dashboard/chat";
 import ChatApproval from "./pages/ChatApproval";
 import TeacherAssigment from "./pages/Dashboard/TeacherAssigment";
 import AssignmentCreate from "./pages/Dashboard/AssigmentCreate";
+import AssignmentEdit from "./pages/Dashboard/AssignmentEdit";
+import SubjectsListPage from "./pages/Dashboard/SubjectList";
+import AssignmentsListPage from "./pages/Dashboard/AssignmentsListPage";
+import AssignmentDetailPage from "./pages/Dashboard/AssignmentDetailPage";
 
 
 
@@ -141,6 +145,30 @@ routesConfig = [
         path:"/teacher-assignments/create",
         element: (<RoleBasedRoute allowedRoles={['teacher']}>
                   <AssignmentCreate />
+                  </RoleBasedRoute>),
+      },
+      {
+        path:"/teacher-assignments/edit/:id",
+        element: (<RoleBasedRoute allowedRoles={['teacher']}>
+                  <AssignmentEdit />
+                  </RoleBasedRoute>),
+      },
+      {
+        path:"/student-assignments",
+        element: (<RoleBasedRoute allowedRoles={['student']}>
+                  <SubjectsListPage />
+                  </RoleBasedRoute>),
+      },
+      {
+        path:"/student-assignments/:subject",
+        element: (<RoleBasedRoute allowedRoles={['student']}>
+                  <AssignmentsListPage />
+                  </RoleBasedRoute>),
+      },
+      {
+        path:"/student/assignment/:id",
+        element: (<RoleBasedRoute allowedRoles={['student']}>
+                  <AssignmentDetailPage />
                   </RoleBasedRoute>),
       },
     ],
