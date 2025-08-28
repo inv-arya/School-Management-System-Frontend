@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useParams, useNavigate } from "react-router-dom";
 import { axiosInstance } from "../../api/axios";
 import {
@@ -9,6 +9,7 @@ import {
   Typography,
   Box,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 
 const allowedTypes = [
@@ -23,40 +24,59 @@ const AssignmentEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [currentFileName, setCurrentFileName] = useState(""); 
+  const [newFileName, setNewFileName] = useState(""); 
 
   const {
-    register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
   } = useForm({
-  defaultValues: {
-    title: "",
-    description: "",
-    subject: "",
-    grade: "",
-    deadline: "",
-    max_marks: "",
-  },
-});
+    defaultValues: {
+      title: "",
+      description: "",
+      subject: "",
+      grade: "",
+      deadline: "",
+      max_marks: "",
+      reference_files: null,
+    },
+  });
 
-  
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const res = await axiosInstance.get(`/assignments/${id}/`);
         const data = res.data;
 
+        
+        const fileName = data.reference_files
+          ? data.reference_files.split("/").pop() || "Existing File"
+          : "";
+
+        setCurrentFileName(fileName);
+
+        const formattedDeadline = data.deadline
+          ? new Date(data.deadline).toISOString().slice(0, 16)
+          : "";
+
         reset({
-          title: data.title,
-          description: data.description,
-          subject: data.subject,
-          grade: data.grade,
-          deadline: data.deadline?.slice(0, 16), // yyyy-MM-ddTHH:mm
-          max_marks: data.max_marks,
+          title: data.title || "",
+          description: data.description || "",
+          subject: data.subject || "",
+          grade: data.grade || "",
+          deadline: formattedDeadline,
+          max_marks: data.max_marks || "",
         });
-      } catch {
-        setServerError("Failed to fetch assignment details");
+      } catch (err) {
+        setServerError(
+          err.response?.data?.detail || "Failed to fetch assignment details"
+        );
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -64,10 +84,18 @@ const AssignmentEdit = () => {
 
   const onSubmit = async (formData) => {
     setServerError("");
+    setLoading(true);
+
     try {
       const deadlineDate = new Date(formData.deadline);
+      if (isNaN(deadlineDate.getTime())) {
+        setServerError("Invalid deadline format.");
+        setLoading(false);
+        return;
+      }
       if (deadlineDate <= new Date()) {
         setServerError("Deadline must be in the future.");
+        setLoading(false);
         return;
       }
 
@@ -83,6 +111,7 @@ const AssignmentEdit = () => {
         const file = formData.reference_files[0];
         if (!allowedTypes.includes(file.type)) {
           setServerError("Invalid file type. Allowed: PDF, JPG, PNG, PPT, PPTX.");
+          setLoading(false);
           return;
         }
         data.append("reference_files", file);
@@ -93,7 +122,10 @@ const AssignmentEdit = () => {
       });
       navigate("/teacher-assignments");
     } catch (err) {
-      setServerError("Failed to update assignment");
+      setServerError(
+        err.response?.data?.detail || "Failed to update assignment"
+      );
+      setLoading(false);
     }
   };
 
@@ -104,80 +136,156 @@ const AssignmentEdit = () => {
       </Typography>
 
       {serverError && <Alert severity="error">{serverError}</Alert>}
+      {loading && (
+        <Box display="flex" justifyContent="center" my={2}>
+          <CircularProgress />
+        </Box>
+      )}
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate sx={{ mt: 2 }}>
-        <TextField
-          fullWidth
-          label="Title"
-          margin="normal"
-          {...register("title", { required: "Title is required" })}
-          error={!!errors.title}
-          helperText={errors.title?.message}
+        <Controller
+          name="title"
+          control={control}
+          rules={{ required: "Title is required" }}
+          render={({ field }) => (
+            <TextField
+              fullWidth
+              label="Title"
+              margin="normal"
+              {...field}
+              error={!!errors.title}
+              helperText={errors.title?.message}
+            />
+          )}
         />
 
-        <TextField
-          fullWidth
-          label="Description"
-          margin="normal"
-          multiline
-          rows={3}
-          {...register("description", { required: "Description is required" })}
-          error={!!errors.description}
-          helperText={errors.description?.message}
+        <Controller
+          name="description"
+          control={control}
+          rules={{ required: "Description is required" }}
+          render={({ field }) => (
+            <TextField
+              fullWidth
+              label="Description"
+              margin="normal"
+              multiline
+              rows={3}
+              {...field}
+              error={!!errors.description}
+              helperText={errors.description?.message}
+            />
+          )}
         />
 
-        <TextField
-          fullWidth
-          label="Subject"
-          margin="normal"
-          {...register("subject", { required: "Subject is required" })}
-          error={!!errors.subject}
-          helperText={errors.subject?.message}
+        <Controller
+          name="subject"
+          control={control}
+          rules={{ required: "Subject is required" }}
+          render={({ field }) => (
+            <TextField
+              fullWidth
+              label="Subject"
+              margin="normal"
+              {...field}
+              error={!!errors.subject}
+              helperText={errors.subject?.message}
+            />
+          )}
         />
 
-        <TextField
-          fullWidth
-          label="Grade"
-          margin="normal"
-          {...register("grade", { required: "Grade is required" })}
-          error={!!errors.grade}
-          helperText={errors.grade?.message}
+        <Controller
+          name="grade"
+          control={control}
+          rules={{ required: "Grade is required" }}
+          render={({ field }) => (
+            <TextField
+              fullWidth
+              label="Grade"
+              margin="normal"
+              {...field}
+              error={!!errors.grade}
+              helperText={errors.grade?.message}
+            />
+          )}
         />
 
-        <TextField
-          fullWidth
-          label="Deadline"
-          type="datetime-local"
-          margin="normal"
-          {...register("deadline", { required: "Deadline is required" })}
-          error={!!errors.deadline}
-          helperText={errors.deadline?.message}
-          InputLabelProps={{ shrink: true }}
+        <Controller
+          name="deadline"
+          control={control}
+          rules={{ required: "Deadline is required" }}
+          render={({ field }) => (
+            <TextField
+              fullWidth
+              label="Deadline"
+              type="datetime-local"
+              margin="normal"
+              {...field}
+              error={!!errors.deadline}
+              helperText={errors.deadline?.message}
+              InputLabelProps={{ shrink: true }}
+            />
+          )}
         />
 
-        <TextField
-          fullWidth
-          label="Max Marks"
-          type="number"
-          margin="normal"
-          {...register("max_marks", {
+        <Controller
+          name="max_marks"
+          control={control}
+          rules={{
             required: "Max marks are required",
             min: { value: 1, message: "Must be at least 1" },
-          })}
-          error={!!errors.max_marks}
-          helperText={errors.max_marks?.message}
+          }}
+          render={({ field }) => (
+            <TextField
+              fullWidth
+              label="Max Marks"
+              type="number"
+              margin="normal"
+              {...field}
+              error={!!errors.max_marks}
+              helperText={errors.max_marks?.message}
+            />
+          )}
         />
 
-        <Box mt={2}>
-          <input
-            type="file"
-            {...register("reference_files")}
-            accept=".pdf,.jpg,.jpeg,.png,.ppt,.pptx"
-          />
-        </Box>
+        <Controller
+          name="reference_files"
+          control={control}
+          render={({ field: { onChange } }) => (
+            <Box mt={2}>
+              <Button variant="outlined" component="label">
+                Upload Reference File
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) => {
+                    onChange(e.target.files);
+                    setNewFileName(e.target.files[0]?.name || "");
+                  }}
+                  accept=".pdf,.jpg,.jpeg,.png,.ppt,.pptx"
+                />
+              </Button>
+              {currentFileName && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Current File: {currentFileName}
+                </Typography>
+              )}
+              {newFileName && (
+                <Typography variant="body2" sx={{ mt: 1, color: "primary.main" }}>
+                  New File: {newFileName}
+                </Typography>
+              )}
+            </Box>
+          )}
+        />
 
-        <Button type="submit" variant="contained" color="primary" sx={{ mt: 3 }}>
-          Update Assignment
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          sx={{ mt: 3 }}
+          disabled={loading}
+        >
+          {loading ? "Updating..." : "Update Assignment"}
         </Button>
       </Box>
     </Container>

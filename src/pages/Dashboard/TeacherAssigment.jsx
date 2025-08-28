@@ -100,7 +100,7 @@ const TeacherAssigment = () => {
             <div className="flex gap-3 mt-3">
               <Button
                 variant="contained"
-                onClick={() => navigate(`/assignments/${assignment.id}/submissions`)}
+                onClick={() => navigate(`/teacher-assignments/submissions/${assignment.id}`)}
               >
                 Submissions
               </Button>

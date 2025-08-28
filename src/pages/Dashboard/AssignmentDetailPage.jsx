@@ -28,19 +28,23 @@ const AssignmentDetailPage = () => {
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file) {
+      alert("Please select a file to upload");
+      return;
+    }
     const formData = new FormData();
-    formData.append("submission_files", file);
-    formData.append("assignment", id);
+    formData.append("assignment_id", id);
+    formData.append("submission_file", file);
 
     try {
-      await axiosInstance.post("/submissions/", formData, {
+      const res = await axiosInstance.put("/assignments/submissions/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      alert("Submission uploaded successfully!");
+      alert("Submission updated successfully!");
     } catch (error) {
       console.error("Upload failed", error);
-      alert("Failed to upload submission");
+      const errorMessage = error.response?.data?.error || "Failed to update submission";
+      alert(errorMessage);
     }
   };
 
@@ -54,11 +58,13 @@ const AssignmentDetailPage = () => {
         <Typography variant="body1" gutterBottom>{assignment.description}</Typography>
         <Typography variant="body2" gutterBottom>Subject: {assignment.subject}</Typography>
         <Typography variant="body2" gutterBottom>Grade: {assignment.grade}</Typography>
-        <Typography variant="body2" gutterBottom>Deadline: {new Date(assignment.deadline).toLocaleString()}</Typography>
-
+        <Typography variant="body2" gutterBottom>
+          Deadline: {new Date(assignment.deadline).toLocaleString()}
+        </Typography>
+        <Typography variant="body2" gutterBottom>Max Marks: {assignment.max_marks}</Typography>
         <input type="file" onChange={handleFileChange} />
         <Button variant="contained" color="primary" onClick={handleUpload} sx={{ mt: 2 }}>
-          Upload Submission
+          Update Submission
         </Button>
       </Paper>
     </Container>

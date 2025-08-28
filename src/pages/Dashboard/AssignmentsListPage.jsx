@@ -35,10 +35,11 @@ const AssignmentsListPage = () => {
               key={assignment.id} 
               onClick={() => navigate(`/student/assignment/${assignment.id}`)}
             >
-              <ListItemText 
-                primary={assignment.title} 
-                secondary={`Deadline: ${new Date(assignment.deadline).toLocaleString()}`} 
+              <ListItemText
+                primary={assignment.title}
+                secondary={`Deadline: ${new Date(assignment.deadline).toLocaleString()} | Status: ${assignment.status_display}`}
               />
+
             </ListItemButton>
           ))}
         </List>

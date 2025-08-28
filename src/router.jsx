@@ -27,6 +27,7 @@ import AssignmentEdit from "./pages/Dashboard/AssignmentEdit";
 import SubjectsListPage from "./pages/Dashboard/SubjectList";
 import AssignmentsListPage from "./pages/Dashboard/AssignmentsListPage";
 import AssignmentDetailPage from "./pages/Dashboard/AssignmentDetailPage";
+import TeacherAssignmentDetailPage from "./pages/Dashboard/TeacherAssignmentDetailPage";
 
 
 
@@ -151,6 +152,12 @@ routesConfig = [
         path:"/teacher-assignments/edit/:id",
         element: (<RoleBasedRoute allowedRoles={['teacher']}>
                   <AssignmentEdit />
+                  </RoleBasedRoute>),
+      },
+      {
+        path:"/teacher-assignments/submissions/:id",
+        element: (<RoleBasedRoute allowedRoles={['teacher']}>
+                  <TeacherAssignmentDetailPage />
                   </RoleBasedRoute>),
       },
       {
