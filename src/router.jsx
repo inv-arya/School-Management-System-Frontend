@@ -28,6 +28,7 @@ import SubjectsListPage from "./pages/Dashboard/SubjectList";
 import AssignmentsListPage from "./pages/Dashboard/AssignmentsListPage";
 import AssignmentDetailPage from "./pages/Dashboard/AssignmentDetailPage";
 import TeacherAssignmentDetailPage from "./pages/Dashboard/TeacherAssignmentDetailPage";
+import AdminSubmission from "./pages/Dashboard/AdminSubmission";
 
 
 
@@ -138,7 +139,7 @@ routesConfig = [
       },
       {
         path:"/teacher-assignments",
-        element: (<RoleBasedRoute allowedRoles={['teacher']}>
+        element: (<RoleBasedRoute allowedRoles={['teacher','admin']}>
                   <TeacherAssigment />
                   </RoleBasedRoute>),
       },
@@ -176,6 +177,12 @@ routesConfig = [
         path:"/student/assignment/:id",
         element: (<RoleBasedRoute allowedRoles={['student']}>
                   <AssignmentDetailPage />
+                  </RoleBasedRoute>),
+      },
+      {
+        path:"/assignment/submission/:id",
+        element: (<RoleBasedRoute allowedRoles={['admin']}>
+                  <AdminSubmission />
                   </RoleBasedRoute>),
       },
     ],

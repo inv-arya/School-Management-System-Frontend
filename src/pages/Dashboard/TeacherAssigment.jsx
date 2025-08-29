@@ -19,6 +19,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
 import { useNavigate } from "react-router-dom";
 import { axiosInstance } from "../../api/axios"; 
+import { useAuth } from '../../auth/AuthContext';
 
 const TeacherAssigment = () => {
   const [assignments, setAssignments] = useState([]);
@@ -26,6 +27,7 @@ const TeacherAssigment = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const navigate = useNavigate();
+  const { role } = useAuth();
 
   useEffect(() => {
     fetchAssignments();
@@ -100,10 +102,18 @@ const TeacherAssigment = () => {
             <div className="flex gap-3 mt-3">
               <Button
                 variant="contained"
-                onClick={() => navigate(`/teacher-assignments/submissions/${assignment.id}`)}
+                onClick={() =>
+                  navigate(
+                    role === 'admin'
+                      ? `/assignment/submission/${assignment.id}`
+                      : `/teacher-assignments/submissions/${assignment.id}`
+                  )
+                }
               >
-                Submissions
+                {role === 'admin' ? 'Overdue Submissions' : 'Submissions'}
               </Button>
+              {role == 'teacher' && (
+                <>
               <IconButton
                 color="primary"
                 onClick={() => navigate(`/teacher-assignments/edit/${assignment.id}`)}
@@ -119,6 +129,7 @@ const TeacherAssigment = () => {
               >
                 <DeleteIcon />
               </IconButton>
+              </>)}
             </div>
           </AccordionDetails>
         </Accordion>

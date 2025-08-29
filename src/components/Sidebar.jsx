@@ -33,6 +33,7 @@ const Sidebar = ({ onDrawerToggle, mobileOpen }) => {
   if (role === "admin") {
     navItems.push({ text: "Teachers", path: "/teachers" });
     navItems.push({ text: "Students", path: "/students" });
+    navItems.push({ text: "Assignment", path: "/teacher-assignments" });
   } else if (role === "teacher") {
     navItems.push({ text: "Students", path: "/students" });
     navItems.push({ text: "Exam", path: "/exams" });
