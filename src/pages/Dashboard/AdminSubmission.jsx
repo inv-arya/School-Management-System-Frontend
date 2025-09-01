@@ -24,7 +24,7 @@ const AdminSubmission = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { id } = useParams();
-//    const { role } = useAuth();
+
   useEffect(() => {
     const checkAdminAndFetchData = async () => {
       try {
@@ -47,13 +47,14 @@ const AdminSubmission = () => {
 
   const handleExport = async (format) => {
     try {
-      const response = await axiosInstance.get(`/assignments/submissions/overdue/${id}/export/?format=${format}`, {
+      const response = await axiosInstance.get(`/assignments/submissions/overdue/${id}/export?formats=${format}`, {
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `overdue_submissions_${id}.${format}`);
+      const extension = format === "excel" ? "xlsx" : "pdf";
+      link.setAttribute('download', `overdue_submissions_${id}.${extension}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
