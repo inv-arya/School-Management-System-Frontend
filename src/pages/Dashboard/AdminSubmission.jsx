@@ -13,6 +13,7 @@ import {
   TableRow,
   Button,
   Box,
+  Pagination,
 } from "@mui/material";
 import { axiosInstance } from "../../api/axios"; 
 
@@ -23,6 +24,8 @@ const AdminSubmission = () => {
   const [assignment, setAssignment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const { id } = useParams();
 
   useEffect(() => {
@@ -31,10 +34,11 @@ const AdminSubmission = () => {
 
         const [assignmentRes, submissionsRes] = await Promise.all([
           axiosInstance.get(`/assignments/${id}/`),
-          axiosInstance.get(`/assignments/submissions/overdue/${id}/`),
+          axiosInstance.get(`/assignments/submissions/overdue/${id}/?page=${page}`),
         ]);
         setAssignment(assignmentRes.data);
-        setSubmissions(submissionsRes.data);
+        setSubmissions(submissionsRes.data.results);
+        setTotalPages(Math.ceil(submissionsRes.data.count / 5));
       } catch (error) {
         console.error("Error fetching data", error);
         setError(error.response?.data?.error || error.response?.data?.detail || "Failed to fetch data");
@@ -43,7 +47,7 @@ const AdminSubmission = () => {
       }
     };
     checkAdminAndFetchData();
-  }, [id]);
+  }, [id,page]);
 
   const handleExport = async (format) => {
     try {
@@ -109,6 +113,16 @@ const AdminSubmission = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+            {totalPages > 1 && (
+              <Box display="flex" justifyContent="center" mt={2}>
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={(e, value) => setPage(value)}
+                  color="primary"
+                />
+              </Box>
+            )}
             <Box sx={{ display: "flex", gap: 2 }}>
               <Button
                 variant="contained"

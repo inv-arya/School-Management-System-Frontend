@@ -12,6 +12,7 @@ import {
   TextField,
   Button,
   Box,
+  Pagination,
 } from "@mui/material";
 import { axiosInstance } from "../../api/axios";
 
@@ -22,7 +23,9 @@ const TeacherAssignmentDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [marksInput, setMarksInput] = useState({});
-  
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const backendBaseUrl = "http://localhost:8000"; 
 
   useEffect(() => {
@@ -30,11 +33,12 @@ const TeacherAssignmentDetailPage = () => {
       try {
         const [assignmentRes, submissionsRes] = await Promise.all([
           axiosInstance.get(`/assignments/${id}/`),
-          axiosInstance.get(`/assignments/${id}/submissions/`),
+          axiosInstance.get(`/assignments/${id}/submissions/?page=${page}`),
         ]);
         setAssignment(assignmentRes.data);
-        setSubmissions(submissionsRes.data);
-        console.log("Submissions data:", submissionsRes.data); // Debug
+        setSubmissions(submissionsRes.data.results);
+        setTotalPages(Math.ceil(submissionsRes.data.count / 5));
+        
       } catch (error) {
         console.error("Error fetching data", error);
         setError(error.response?.data?.error || "Failed to fetch assignment or submissions");
@@ -43,7 +47,7 @@ const TeacherAssignmentDetailPage = () => {
       }
     };
     fetchAssignmentAndSubmissions();
-  }, [id]);
+  }, [id, page]);
 
   const handleMarksChange = (submissionId, value) => {
     setMarksInput((prev) => ({ ...prev, [submissionId]: value }));
@@ -92,6 +96,7 @@ const TeacherAssignmentDetailPage = () => {
         {submissions.length === 0 ? (
           <Typography>No submissions yet</Typography>
         ) : (
+          <>
           <List >
             {submissions.map((submission) => (
               
@@ -125,14 +130,14 @@ const TeacherAssignmentDetailPage = () => {
                   secondary={
                     <>
                       Submitted: {submission.submitted_at ? new Date(submission.submitted_at).toLocaleString() : "N/A"} |{" "}
-                      File: {submission.submission_file ? (
-                        <Link
-                          href={`${backendBaseUrl}${submission.submission_file}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          View Submission File
-                        </Link>
+                      File: {submission.submission_files ? (
+                      <Link
+                        href={`http://localhost:8000${submission.submission_files}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View Submission File
+                      </Link>
                       ) : (
                         "No file"
                       )} | Marks: {submission.marks != null ? submission.marks : "Not graded"}
@@ -142,6 +147,17 @@ const TeacherAssignmentDetailPage = () => {
               </ListItem>
             ))}
           </List>
+          {totalPages > 1 && (
+              <Box display="flex" justifyContent="center" mt={2}>
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={(e, value) => setPage(value)}
+                  color="primary"
+                />
+              </Box>
+            )}
+            </>
         )}
       </Paper>
     </Container>

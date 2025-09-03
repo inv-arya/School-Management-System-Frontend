@@ -135,7 +135,7 @@ const AssignmentDetailPage = () => {
           color="primary"
           onClick={handleUpload}
           sx={{ mt: 2, ml: 2 }}
-          disabled={submission?.status === 2 } 
+          disabled={submission?.status === 2 || new Date(assignment.deadline) < new Date()} 
         >
           {submission?.status === 1 ? "Replace Submission" : "Upload Submission"}
         </Button>

@@ -12,6 +12,8 @@ import {
   DialogActions,
   Fab,
   CircularProgress,
+  Box,
+  Pagination,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -26,23 +28,29 @@ const TeacherAssigment = () => {
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [count, setCount] = useState(0);
   const navigate = useNavigate();
   const { role } = useAuth();
+  const pageSize = 5;
 
   useEffect(() => {
-    fetchAssignments();
-  }, []);
+    fetchAssignments(page);
+  }, [page]);
 
-  const fetchAssignments = async () => {
+  const fetchAssignments = async (page = 1) => {
     try {
-      const res = await axiosInstance.get("/assignments/list/");
-      setAssignments(res.data);
+      const res = await axiosInstance.get(`/assignments/list/?page=${page}`);
+      setAssignments(res.data.results);
+      setCount(res.data.count);
     } catch (error) {
       console.error("Error fetching assignments:", error);
     } finally {
       setLoading(false);
     }
   };
+  
+  const totalPages = Math.ceil(count / pageSize);
 
   const handleDelete = async () => {
     try {
@@ -132,18 +140,29 @@ const TeacherAssigment = () => {
               </>)}
             </div>
           </AccordionDetails>
+          
         </Accordion>
       ))}
 
-      
-      <Fab
-        color="primary"
-        sx={{ position: "fixed", bottom: 20, right: 20 }}
-        onClick={() => navigate("/teacher-assignments/create")}
-      >
-        <AddIcon />
-      </Fab>
-
+      <Box display="flex" justifyContent="center" mt={3}>
+        {totalPages > 1 && (
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(event, value) => setPage(value)}
+            color="primary"
+          />
+        )}
+      </Box>
+      {role == 'teacher' && (
+        <Fab
+          color="primary"
+          sx={{ position: "fixed", bottom: 20, right: 20 }}
+          onClick={() => navigate("/teacher-assignments/create")}
+        >
+          <AddIcon />
+        </Fab>
+      )}
       
       <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
         <DialogTitle>Are you sure you want to delete this assignment?</DialogTitle>
