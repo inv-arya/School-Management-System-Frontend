@@ -12,7 +12,6 @@ export default function Login() {
   const {
     register,
     handleSubmit,
-    setError,
     formState: { errors, isSubmitting },
   } = useForm();
 
@@ -40,14 +39,19 @@ export default function Login() {
         
         let message = "Invalid username or password";
 
-      if (error.response?.data?.detail) {
-        const detail = error.response.data.detail;
-        if (detail === "No active account found with the given credentials") {
-          message = "Invalid username or password";
-        } else if (detail === "Your account has been restricted. Please contact admin.") {
-          message = detail;
+        if (error.message === "Network Error") {
+          message = "Backend server not reachable. Please try again later.";
+        } else if (error.code === "ERR_CONNECTION_REFUSED") {
+          message = "Connection refused. Please check if the server is running.";
+        } else if (error.response?.data?.detail) {
+          const detail = error.response.data.detail;
+          if (detail === "No active account found with the given credentials") {
+            message = "Invalid username or password";
+          } else if (detail === "Your account has been restricted. Please contact admin.") {
+            message = detail;
+          }
         }
-      }
+
 
       setSnackbar({ open: true, message, severity: 'error' });
         

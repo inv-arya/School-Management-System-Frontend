@@ -16,7 +16,7 @@ import { useAuth } from '../../auth/AuthContext';
 const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  // const [ws, setWs] = useState(null);
+  const [ws, setWs] = useState(null);
   const [error, setError] = useState(null);
   const [chatStatus, setChatStatus] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '' });
@@ -32,7 +32,7 @@ const Chat = () => {
   const chatBoxRef = useRef(null);
   const wsRef = useRef(null);
   const observer = useRef();
-  const isReconnecting = useRef(false); 
+  const isReconnecting = useRef(false);
 
   const lastMessageRef = useCallback(
     (node) => {
@@ -50,90 +50,6 @@ const Chat = () => {
     [hasMore, page, totalPages]
   );
 
-  
-  const initializeWebSocket = useCallback(() => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      return; 
-    }
-
-    const token = localStorage.getItem('access');
-    const websocket = new WebSocket(`${WS_BASE_URL}${chatId}/?token=${token}`);
-    wsRef.current = websocket;
-    setWs(websocket);
-
-    websocket.onopen = () => {
-      console.log('WebSocket connected');
-      isReconnecting.current = false;
-      setError(null);
-    };
-
-    websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.error) {
-        setError(data.error);
-        setSnackbar({ open: true, message: data.error });
-      } else {
-        setMessages((prev) => {
-          const exists = prev.some(
-            (msg) =>
-              msg.timestamp === data.timestamp &&
-              msg.message === data.message &&
-              msg.sender_type === (data.sender.includes('Teacher') ? 0 : 1)
-          );
-          if (exists) return prev;
-
-          const newMessages = [
-            ...prev,
-            {
-              id: data.id || data.timestamp || Date.now(),
-              sender_type: data.sender.includes('Teacher') ? 0 : 1,
-              message: data.message,
-              timestamp: data.timestamp,
-            },
-          ];
-
-          if (
-            chatBoxRef.current &&
-            chatBoxRef.current.scrollHeight - chatBoxRef.current.scrollTop - chatBoxRef.current.clientHeight < 50
-          ) {
-            setTimeout(() => {
-              chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
-            }, 0);
-          }
-
-          return newMessages;
-        });
-      }
-    };
-
-    websocket.onerror = (e) => {
-      console.log('WebSocket error', e);
-      if (!isReconnecting.current) {
-        setError('WebSocket connection failed');
-        setSnackbar({ open: true, message: 'WebSocket connection failed' });
-      }
-    };
-
-    websocket.onclose = (event) => {
-      console.log('WebSocket closed', event);
-      if (event.code === 4001) {
-        setSnackbar({ open: true, message: 'Your account has been deactivated by the admin.' });
-        setTimeout(() => {
-          localStorage.clear();
-          navigate('/');
-        }, 2000);
-      } else if (!isReconnecting.current) {
-        
-        isReconnecting.current = true;
-        setTimeout(() => {
-          console.log('Attempting to reconnect WebSocket...');
-          initializeWebSocket();
-        }, 3000);
-      }
-    };
-  }, [chatId, navigate]);
-
-  
   useEffect(() => {
     if (!loading) {
       const fetchMessages = async () => {
@@ -178,32 +94,143 @@ const Chat = () => {
     }
   }, [chatId, loading, page, totalPages]);
 
-  
   useEffect(() => {
     if (!loading) {
+      let isMounted = true; 
+
       const fetchChatStatus = async () => {
         try {
           const statusResponse = await axiosInstance.get(`/chat/check-status-by-id/${chatId}/`);
-          setChatStatus(statusResponse.data.status || 2);
+          if (isMounted) setChatStatus(statusResponse.data.status || 2); 
         } catch (err) {
-          setError('Failed to fetch chat status');
-          setSnackbar({ open: true, message: 'Failed to fetch chat status' });
+          if (isMounted) { 
+            setError('Failed to fetch chat status');
+            setSnackbar({ open: true, message: 'Failed to fetch chat status' });
+          }
         }
       };
 
       fetchChatStatus();
-      initializeWebSocket();
 
       
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        return; 
+      }
+
+      
+      const token = localStorage.getItem('access');
+      if (!token) {
+        setError('No authentication token found');
+        setSnackbar({ open: true, message: 'No authentication token found' });
+        return;
+      }
+
+      const websocket = new WebSocket(`${WS_BASE_URL}${chatId}/?token=${token}`);
+      wsRef.current = websocket;
+      setWs(websocket);
+
+      websocket.onopen = () => {
+        console.log('WebSocket connected');
+        isReconnecting.current = false;
+        if (isMounted) setError(null); 
+      };
+
+      websocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.error) {
+          if (isMounted) { 
+            setError(data.error);
+            setSnackbar({ open: true, message: data.error });
+          }
+        } else {
+          setMessages((prev) => {
+            const exists = prev.some(
+              (msg) =>
+                msg.timestamp === data.timestamp &&
+                msg.message === data.message &&
+                msg.sender_type === (data.sender.includes('Teacher') ? 0 : 1)
+            );
+            if (exists) return prev;
+
+            const newMessages = [
+              ...prev,
+              {
+                id: data.id || data.timestamp || Date.now(),
+                sender_type: data.sender.includes('Teacher') ? 0 : 1,
+                message: data.message,
+                timestamp: data.timestamp,
+              },
+            ];
+
+            if (
+              chatBoxRef.current &&
+              chatBoxRef.current.scrollHeight - chatBoxRef.current.scrollTop - chatBoxRef.current.clientHeight < 50
+            ) {
+              setTimeout(() => {
+                if (chatBoxRef.current) {
+                  chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+                }
+              }, 0);
+            }
+
+            return newMessages;
+          });
+        }
+      };
+
+      websocket.onerror = (e) => {
+        console.log('WebSocket error', e);
+        if (!isReconnecting.current && isMounted) { 
+          setError('WebSocket connection failed');
+          setSnackbar({ open: true, message: 'WebSocket connection failed' });
+        }
+      };
+
+      websocket.onclose = (event) => {
+        console.log('WebSocket closed', event);
+        if (event.code === 4001) {
+          if (isMounted) { 
+            setSnackbar({ open: true, message: 'Your account has been deactivated by the admin.' });
+            setTimeout(() => {
+              localStorage.clear();
+              navigate('/');
+            }, 2000);
+          }
+        } else if (!isReconnecting.current && isMounted) { 
+          isReconnecting.current = true;
+          setTimeout(() => {
+            if (isMounted) { 
+              console.log('Attempting to reconnect WebSocket...');
+              
+              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+              const newToken = localStorage.getItem('access');
+              if (!newToken) {
+                setError('No authentication token found');
+                setSnackbar({ open: true, message: 'No authentication token found' });
+                return;
+              }
+              const newWebsocket = new WebSocket(`${WS_BASE_URL}${chatId}/?token=${newToken}`);
+              wsRef.current = newWebsocket;
+              setWs(newWebsocket);
+              newWebsocket.onopen = websocket.onopen;
+              newWebsocket.onmessage = websocket.onmessage;
+              newWebsocket.onerror = websocket.onerror;
+              newWebsocket.onclose = websocket.onclose;
+            }
+          }, 3000);
+        }
+      };
+
       return () => {
-        if (wsRef.current) {
-          isReconnecting.current = true; 
-          wsRef.current.close();
+        isMounted = false; 
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          isReconnecting.current = true;
+          wsRef.current.close(1000, 'Component unmounting');
           wsRef.current = null;
         }
       };
     }
-  }, [chatId, loading, initializeWebSocket]);
+  }, [chatId, loading, navigate]); 
 
   const sendMessage = () => {
     if (
