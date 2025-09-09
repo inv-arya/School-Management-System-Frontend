@@ -33,66 +33,119 @@ const Chat = () => {
   const wsRef = useRef(null);
   const observer = useRef();
   const isReconnecting = useRef(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const formatDateLabel = (date) => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    const messageDate = new Date(date);
+
+    const isToday = messageDate.toDateString() === today.toDateString();
+    const isYesterday = messageDate.toDateString() === yesterday.toDateString();
+
+    if (isToday) return 'Today';
+    if (isYesterday) return 'Yesterday';
+    return messageDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  
+  const isSameDay = (date1, date2) => {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
+  };
 
   const lastMessageRef = useCallback(
-    (node) => {
-      if (!hasMore || (totalPages && page >= totalPages)) return;
-      if (observer.current) observer.current.disconnect();
+  (node) => {
+    if (!hasMore || (totalPages && page >= totalPages || isLoading)) return;
+    if (observer.current) observer.current.disconnect();
 
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore && page < totalPages) {
+    let debounceTimeout;
+    observer.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && page < totalPages) {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(() => {
           setPage((prev) => prev + 1);
-        }
-      });
+        }, 300); 
+      }
+    },{ threshold: 1.0 });
 
-      if (node) observer.current.observe(node);
-    },
-    [hasMore, page, totalPages]
-  );
+    if (node) observer.current.observe(node);
+
+    return () => {
+      clearTimeout(debounceTimeout);
+      if (observer.current) observer.current.disconnect();
+    };
+  },
+  [hasMore, page, totalPages, isLoading]
+);
 
   useEffect(() => {
-    if (!loading) {
-      const fetchMessages = async () => {
-        try {
-          const response = await axiosInstance.get(`/chat/get-messages/${chatId}/?page=${page}`);
-          const data = response.data.results || response.data;
-          if (response.data.count && !totalPages) {
-            const pages = Math.ceil(response.data.count / 5);
-            setTotalPages(pages);
-          }
-          if (data.length === 0) {
-            setHasMore(false);
-            return;
-          }
-
-          const normalized = [...data].reverse();
-          if (page === 1) {
-            setMessages(normalized);
-            setTimeout(() => {
-              if (chatBoxRef.current) {
-                chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
-              }
-            }, 0);
-          } else {
-            const prevHeight = chatBoxRef.current.scrollHeight;
-            setMessages((prev) => [...normalized, ...prev]);
-            setTimeout(() => {
-              chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight - prevHeight;
-            }, 0);
-          }
-        } catch (err) {
-          if (err.response?.status === 404) {
-            setHasMore(false);
-          } else {
-            setError('Failed to fetch chat data');
-            setSnackbar({ open: true, message: 'Failed to fetch chat data' });
-          }
+  if (!loading && !isLoading) {
+    const fetchMessages = async () => {
+      try {
+        setIsLoading(true); 
+        const response = await axiosInstance.get(`/chat/get-messages/${chatId}/?page=${page}`);
+        const data = response.data.results || response.data;
+        if (response.data.count && !totalPages) {
+          const pages = Math.ceil(response.data.count / 5);
+          setTotalPages(pages);
         }
-      };
+        if (data.length === 0) {
+          setHasMore(false);
+          return;
+        }
 
-      fetchMessages();
-    }
-  }, [chatId, loading, page, totalPages]);
+        const normalized = [...data].reverse();
+        if (page === 1) {
+          setMessages(normalized);
+          setTimeout(() => {
+            if (chatBoxRef.current) {
+              chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+            }
+          }, 0);
+        } else {
+          
+          const previousScrollHeight = chatBoxRef.current.scrollHeight;
+          const previousScrollTop = chatBoxRef.current.scrollTop;
+
+          
+          setMessages((prev) => [...normalized, ...prev]);
+
+          
+          setTimeout(() => {
+            if (chatBoxRef.current) {
+              const newScrollHeight = chatBoxRef.current.scrollHeight;
+              
+              chatBoxRef.current.scrollTop = previousScrollTop + (newScrollHeight - previousScrollHeight);
+            }
+          }, 0);
+        }
+      } catch (err) {
+        if (err.response?.status === 404) {
+          setHasMore(false);
+        } else {
+          setError('Failed to fetch chat data');
+          setSnackbar({ open: true, message: 'Failed to fetch chat data' });
+        }
+      } finally {
+        setIsLoading(false); 
+      }
+    };
+
+    fetchMessages();
+  }
+ }, [chatId, loading, page, totalPages]);
 
   useEffect(() => {
     if (!loading) {
@@ -259,31 +312,65 @@ const Chat = () => {
         ref={chatBoxRef}
         sx={{ height: '60vh', overflowY: 'auto', mb: 2, p: 2, bgcolor: '#f5f7fa', borderRadius: 2 }}
       >
-        {messages.map((msg, idx) => (
-          <Box
-            key={`${msg.id}-${idx}`}
-            ref={idx === 0 ? lastMessageRef : null}
-            sx={{
-              mb: 2,
-              display: 'flex',
-              justifyContent: msg.sender_type === (role.toUpperCase() === 'TEACHER' ? 0 : 1) ? 'flex-end' : 'flex-start',
-            }}
-          >
-            <Box
-              sx={{
-                maxWidth: '70%',
-                p: 1,
-                borderRadius: 2,
-                bgcolor: msg.sender_type === (role.toUpperCase() === 'TEACHER' ? 0 : 1) ? 'primary.light' : 'grey.200',
-              }}
-            >
-              <Typography variant="caption" color="text.secondary">
-                {new Date(msg.timestamp).toLocaleTimeString()}
-              </Typography>
-              <Typography>{`${msg.message}-${msg.id}`}</Typography>
-            </Box>
+        {isLoading && (
+          <Box sx={{ textAlign: 'center', py: 2 }}>
+            <Typography>Loading more messages...</Typography>
           </Box>
-        ))}
+        )}
+        {messages.map((msg, idx) => {
+          
+          const showDate =
+            idx === 0 || !isSameDay(messages[idx - 1].timestamp, msg.timestamp);
+          return (
+            <Box key={`${msg.id}-${idx}`}>
+              
+              {showDate && (
+                <Box sx={{ textAlign: 'center', my: 2 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      bgcolor: 'grey.300',
+                      px: 2,
+                      py: 1,
+                      borderRadius: 2,
+                      display: 'inline-block',
+                    }}
+                  >
+                    {formatDateLabel(msg.timestamp)}
+                  </Typography>
+                </Box>
+              )}
+              <Box
+                ref={idx === 0 ? lastMessageRef : null}
+                sx={{
+                  mb: 2,
+                  display: 'flex',
+                  justifyContent:
+                    msg.sender_type === (role.toUpperCase() === 'TEACHER' ? 0 : 1)
+                      ? 'flex-end'
+                      : 'flex-start',
+                }}
+              >
+                <Box
+                  sx={{
+                    maxWidth: '70%',
+                    p: 1,
+                    borderRadius: 2,
+                    bgcolor:
+                      msg.sender_type === (role.toUpperCase() === 'TEACHER' ? 0 : 1)
+                        ? 'primary.light'
+                        : 'grey.200',
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(msg.timestamp).toLocaleTimeString()}
+                  </Typography>
+                  <Typography>{`${msg.message}`}</Typography>
+                </Box>
+              </Box>
+            </Box>
+          );
+        })}
       </Box>
       {error && <Alert severity="error">{error}</Alert>}
       {chatStatus !== 1 && (

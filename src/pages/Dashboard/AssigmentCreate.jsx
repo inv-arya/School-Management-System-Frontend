@@ -149,20 +149,20 @@ const AssignmentCreate = () => {
 
         
         <TextField
-          select
+          // select
           fullWidth
-          defaultValue="1"
+          // defaultValue="1"
           label="Grade"
           {...register("grade", { required: "Grade is required" })}
           error={!!errors.grade}
           helperText={errors.grade?.message}
           margin="normal"
         >
-          {[...Array(12)].map((_, i) => (
+          {/* {[...Array(12)].map((_, i) => (
             <MenuItem key={i + 1} value={i + 1}>
               {i + 1}
             </MenuItem>
-          ))}
+          ))} */}
         </TextField>
 
         

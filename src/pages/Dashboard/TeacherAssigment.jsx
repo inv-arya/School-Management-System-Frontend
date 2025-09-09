@@ -99,7 +99,7 @@ const TeacherAssigment = () => {
             {assignment.reference_files && (
               <Button
                 variant="outlined"
-                href={`http://localhost:8000${assignment.reference_files}`}
+                href={`${assignment.reference_files}`}
                 target="_blank"
                 sx={{ mt: 1 }}
               >
@@ -124,12 +124,14 @@ const TeacherAssigment = () => {
                 <>
               <IconButton
                 color="primary"
+                disabled={new Date(assignment.deadline) < new Date()}
                 onClick={() => navigate(`/teacher-assignments/edit/${assignment.id}`)}
               >
                 <EditIcon />
               </IconButton>
               <IconButton
                 color="error"
+                disabled={new Date(assignment.deadline) < new Date()}
                 onClick={() => {
                   setDeleteConfirm(true);
                   setDeleteId(assignment.id);

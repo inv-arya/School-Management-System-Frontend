@@ -13,6 +13,7 @@ import {
   Button,
   Box,
   Pagination,
+  Grid
 } from "@mui/material";
 import { axiosInstance } from "../../api/axios";
 
@@ -61,7 +62,7 @@ const TeacherAssignmentDetailPage = () => {
     }
 
     try {
-      const response = await axiosInstance.put(`/submissions/`, { submission_id: submissionId, marks });
+      const response = await axiosInstance.put(`assignments/submissions/`, { submission_id: submissionId, marks });
       setSubmissions((prev) =>
         prev.map((sub) =>
           sub.id === submissionId ? { ...sub, marks: response.data.marks } : sub
@@ -97,56 +98,62 @@ const TeacherAssignmentDetailPage = () => {
           <Typography>No submissions yet</Typography>
         ) : (
           <>
-          <List >
-            {submissions.map((submission) => (
-              
-              <ListItem
-                key={submission.id}
-                secondaryAction={
-                  <Box sx={{ display: "flex", gap: 1 }}>
-                    <TextField
-                      label={`Marks (0-${assignment.max_marks})`}
-                      type="number"
-                      size="small"
-                      value={marksInput[submission.id] || ""}
-                      onChange={(e) => handleMarksChange(submission.id, e.target.value)}
-                      sx={{ width: "120px" }}
-                      inputProps={{ min: 0, max: assignment.max_marks, step: 0.5 }}
-                    />
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={() => handleMarksSubmit(submission.id)}
-                      disabled={!marksInput[submission.id] || isNaN(marksInput[submission.id])}
-                    >
-                      Submit Marks
-                    </Button>
-                  </Box>
-                }
-              >
-             
-                <ListItemText
-                  primary={`Student: ${submission.student_name || "Unknown Student"}`}
-                  secondary={
-                    <>
-                      Submitted: {submission.submitted_at ? new Date(submission.submitted_at).toLocaleString() : "N/A"} |{" "}
-                      File: {submission.submission_files ? (
-                      <Link
-                        href={`http://localhost:8000${submission.submission_files}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        View Submission File
-                      </Link>
-                      ) : (
-                        "No file"
-                      )} | Marks: {submission.marks != null ? submission.marks : "Not graded"}
-                    </>
-                  }
-                />
-              </ListItem>
-            ))}
-          </List>
+          <List>
+              {submissions.map((submission) => (
+                <ListItem key={submission.id} sx={{ flexDirection: "column", alignItems: "stretch" }}>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} md={8}>
+                      <ListItemText
+                        primary={`Student: ${submission.student_name || "Unknown Student"}`}
+                        secondary={
+                          <>
+                            Submitted:{" "}
+                            {submission.submitted_at
+                              ? new Date(submission.submitted_at).toLocaleString()
+                              : "N/A"}{" "}
+                            | File:{" "}
+                            {submission.submission_files ? (
+                              <Link
+                                href={`${backendBaseUrl}${submission.submission_files}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                View Submission File
+                              </Link>
+                            ) : (
+                              "No file"
+                            )}{" "}
+                            | Marks: {submission.marks != null ? submission.marks : "Not graded"}
+                          </>
+                        }
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+                        <TextField
+                          label={`Marks (0-${assignment.max_marks})`}
+                          type="number"
+                          size="small"
+                          value={marksInput[submission.id] || ""}
+                          onChange={(e) => handleMarksChange(submission.id, e.target.value)}
+                          sx={{ width: "120px" }}
+                          inputProps={{ min: 0, max: assignment.max_marks, step: 0.5 }}
+                        />
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => handleMarksSubmit(submission.id)}
+                          disabled={!marksInput[submission.id] || isNaN(marksInput[submission.id])}
+                        >
+                          Submit
+                        </Button>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </ListItem>
+              ))}
+            </List>
+
           {totalPages > 1 && (
               <Box display="flex" justifyContent="center" mt={2}>
                 <Pagination

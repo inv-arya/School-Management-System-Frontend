@@ -86,7 +86,7 @@ const AssignmentDetailPage = () => {
         <Typography variant="body2" gutterBottom>Max Marks: {assignment.max_marks}</Typography>
         {assignment.reference_files && (
           <Link
-                  href={`http://localhost:8000${assignment.submission_files}`}
+                  href={`${assignment.reference_files}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
